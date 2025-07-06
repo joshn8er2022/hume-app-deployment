@@ -21,9 +21,18 @@ console.log('=== SETTING UP MIDDLEWARE ===');
 
 // Configure CORS
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  origin: [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'http://localhost:4000',
+    process.env.CORS_ORIGIN,
+    /\.vercel\.app$/,
+    /\.use\.devtunnels\.ms$/
+  ].filter(Boolean),
   credentials: true,
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 200,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 };
 app.use(cors(corsOptions));
 
@@ -39,6 +48,11 @@ app.use((req, res, next) => {
   console.log(`=== ${req.method} ${req.path} ===`);
   if (req.path.startsWith('/assets/')) {
     console.log('Asset request for:', req.path);
+  }
+  if (req.path.startsWith('/api/')) {
+    console.log('API request:', req.method, req.path);
+    console.log('Request headers:', JSON.stringify(req.headers, null, 2));
+    console.log('Request body:', JSON.stringify(req.body, null, 2));
   }
   next();
 });
