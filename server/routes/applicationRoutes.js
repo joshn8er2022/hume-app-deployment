@@ -46,19 +46,27 @@ router.post('/', async (req, res) => {
     console.log('Application type:', req.body.applicationType);
     console.log('Email:', req.body.email);
 
+    // Extract data from nested structure
+    const { personalInfo = {}, businessInfo = {}, requirements = {}, applicationType = 'clinical' } = req.body;
+    
     // Validate required fields
     const {
       firstName,
       lastName,
       email,
-      phone,
+      phone
+    } = personalInfo;
+
+    const {
       companyName,
-      businessType,
-      mainChallenges,
-      goals,
-      timeline,
-      applicationType = 'clinical'
-    } = req.body;
+      businessType
+    } = businessInfo;
+
+    const {
+      currentChallenges: mainChallenges,
+      primaryGoals: goals,
+      timeline
+    } = requirements;
 
     console.log('=== VALIDATION CHECK ===');
     console.log('firstName:', firstName);
@@ -94,8 +102,28 @@ router.post('/', async (req, res) => {
     console.log('applicationService exists:', !!applicationService);
     console.log('createApplication method exists:', !!applicationService.createApplication);
 
+    // Create application with flattened data
+    const applicationData = {
+      applicationType,
+      firstName,
+      lastName,
+      email,
+      phone,
+      companyName,
+      businessType,
+      mainChallenges,
+      goals,
+      timeline,
+      // Include additional fields from nested structure
+      ...businessInfo,
+      ...requirements,
+      personalInfo,
+      businessInfo,
+      requirements
+    };
+
     // Create application
-    const application = await applicationService.createApplication(req.body);
+    const application = await applicationService.createApplication(applicationData);
 
     console.log('=== APPLICATION CREATED SUCCESSFULLY ===');
     console.log('Application created successfully with ID:', application._id);
