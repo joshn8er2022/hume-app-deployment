@@ -29,14 +29,36 @@ connectDB().then(async () => {
     console.error('=== CONTINUING WITH EXISTING INDEXES ===');
   }
   
-  // Initialize default form configurations
+  // Initialize default form configurations - CRITICAL FOR APPLICATION SUBMISSION
   try {
+    console.log('=== INITIALIZING DEFAULT FORMS (REQUIRED FOR APP SUBMISSION) ===');
     const { initializeDefaultForms } = require('./utils/initializeDefaultForms');
     await initializeDefaultForms();
+    console.log('=== DEFAULT FORMS INITIALIZATION COMPLETED ===');
+    
+    // Verify forms were created successfully
+    const FormConfiguration = require('./models/FormConfiguration');
+    const clinicalForm = await FormConfiguration.getActiveFormByType('clinical');
+    const affiliateForm = await FormConfiguration.getActiveFormByType('affiliate');
+    const wholesaleForm = await FormConfiguration.getActiveFormByType('wholesale');
+    
+    console.log('=== FORM INITIALIZATION VERIFICATION ===');
+    console.log(`Clinical form: ${clinicalForm ? '✓ Available' : '❌ Missing'}`);
+    console.log(`Affiliate form: ${affiliateForm ? '✓ Available' : '❌ Missing'}`);
+    console.log(`Wholesale form: ${wholesaleForm ? '✓ Available' : '❌ Missing'}`);
+    
+    if (clinicalForm) {
+      console.log(`Clinical form fields: ${clinicalForm.fields.length} total, ${clinicalForm.fields.filter(f => f.required).length} required`);
+    }
+    
   } catch (initError) {
-    console.error('=== DEFAULT FORMS INITIALIZATION ERROR ===');
+    console.error('=== CRITICAL: DEFAULT FORMS INITIALIZATION FAILED ===');
     console.error('Error:', initError.message);
-    console.error('=== CONTINUING WITHOUT DEFAULT FORMS ===');
+    console.error('Stack:', initError.stack);
+    console.error('=== APPLICATION SUBMISSION WILL FAIL WITHOUT FORMS ===');
+    
+    // Try to continue but warn that app submission won't work
+    console.error('=== SERVER WILL START BUT APPLICATION FORMS WILL NOT WORK ===');
   }
 }).catch(error => {
   console.error('=== DATABASE CONNECTION FAILED ===');
@@ -101,14 +123,51 @@ app.use((req, res, next) => {
 });
 
 // Health check endpoint (no database required)
-app.get('/health', (req, res) => {
-  res.json({
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    port: process.env.PORT || 4000,
-    environment: process.env.NODE_ENV || 'development',
-    version: 'v1.1-url-fix'
-  });
+app.get('/health', async (req, res) => {
+  try {
+    // Basic health check
+    const healthData = {
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      port: process.env.PORT || 4000,
+      environment: process.env.NODE_ENV || 'development',
+      version: 'v1.2-validation-fix'
+    };
+    
+    // Check form configurations if database is available
+    try {
+      const FormConfiguration = require('./models/FormConfiguration');
+      const formCounts = await FormConfiguration.countDocuments({ isActive: true });
+      healthData.formConfigurations = {
+        totalActive: formCounts,
+        status: formCounts > 0 ? 'available' : 'missing'
+      };
+      
+      // Check specific application types
+      const clinicalForm = await FormConfiguration.getActiveFormByType('clinical');
+      const affiliateForm = await FormConfiguration.getActiveFormByType('affiliate');
+      const wholesaleForm = await FormConfiguration.getActiveFormByType('wholesale');
+      
+      healthData.applicationTypes = {
+        clinical: clinicalForm ? 'available' : 'missing',
+        affiliate: affiliateForm ? 'available' : 'missing',
+        wholesale: wholesaleForm ? 'available' : 'missing'
+      };
+    } catch (dbError) {
+      healthData.formConfigurations = {
+        status: 'database_error',
+        error: dbError.message
+      };
+    }
+    
+    res.json(healthData);
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      timestamp: new Date().toISOString(),
+      error: error.message
+    });
+  }
 });
 
 // Debug endpoint to check client build version

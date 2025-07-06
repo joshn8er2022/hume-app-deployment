@@ -95,11 +95,76 @@ router.post('/test', async (req, res) => {
   }
 });
 
+// Debug endpoint to check form configuration
+router.get('/debug/form-config/:applicationType?', async (req, res) => {
+  try {
+    const applicationType = req.params.applicationType || 'clinical';
+    console.log('=== DEBUG FORM CONFIG ENDPOINT ===');
+    console.log('Application type:', applicationType);
+    
+    const FormConfiguration = require('../models/FormConfiguration');
+    const formConfig = await FormConfiguration.getActiveFormByType(applicationType);
+    
+    if (!formConfig) {
+      return res.status(404).json({
+        success: false,
+        message: `No active form configuration found for ${applicationType}`,
+        availableTypes: ['clinical', 'affiliate', 'wholesale']
+      });
+    }
+    
+    res.status(200).json({
+      success: true,
+      formConfiguration: {
+        id: formConfig._id,
+        name: formConfig.name,
+        version: formConfig.version,
+        applicationType: formConfig.applicationType,
+        isActive: formConfig.isActive,
+        isDefault: formConfig.isDefault,
+        totalFields: formConfig.fields.length,
+        requiredFields: formConfig.fields.filter(f => f.required).map(f => ({
+          fieldId: f.fieldId,
+          label: f.label,
+          type: f.type,
+          section: f.section
+        })),
+        optionalFields: formConfig.fields.filter(f => !f.required).map(f => ({
+          fieldId: f.fieldId,
+          label: f.label,
+          type: f.type,
+          section: f.section
+        }))
+      }
+    });
+  } catch (error) {
+    console.error('=== DEBUG FORM CONFIG ERROR ===', error);
+    res.status(500).json({ 
+      success: false,
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
 router.post('/', validateApplication.validateApplicationData, async (req, res) => {
   try {
-    console.log('=== APPLICATION ROUTE: POST /api/clinic-applications (Dynamic Validation) ===');
+    console.log('=== APPLICATION ROUTE: POST /api/applications (Dynamic Validation) ===');
     console.log('Request received at:', new Date().toISOString());
+    console.log('Request body structure:', JSON.stringify(req.body, null, 2));
+    console.log('Request body keys:', Object.keys(req.body));
     console.log('Validated data available:', !!req.validatedData);
+    
+    // Debug the request structure
+    if (req.body.personalInfo) {
+      console.log('personalInfo keys:', Object.keys(req.body.personalInfo));
+    }
+    if (req.body.businessInfo) {
+      console.log('businessInfo keys:', Object.keys(req.body.businessInfo));
+    }
+    if (req.body.requirements) {
+      console.log('requirements keys:', Object.keys(req.body.requirements));
+    }
     
     // Check if we have validated data from dynamic validation middleware
     if (req.validatedData) {
@@ -337,23 +402,45 @@ router.post('/', validateApplication.validateApplicationData, async (req, res) =
     
     // Fix [object Object] errors by extracting meaningful information
     if (errorMessage.includes('[object Object]')) {
-      console.error('Detected [object Object] in error message, attempting to extract details');
+      console.error('=== DETECTED [object Object] ERROR - EXTRACTING DETAILS ===');
+      console.error('Original error message:', errorMessage);
       console.error('Error object:', error);
       console.error('Error properties:', Object.keys(error));
+      console.error('Error name:', error.name);
+      console.error('Error code:', error.code);
       
       // Try to extract meaningful error information
       if (error.errors) {
+        console.error('Processing error.errors:', error.errors);
         const extractedErrors = Object.values(error.errors).map(err => {
-          if (typeof err === 'object' && err.message) {
-            return err.message;
+          console.error('Processing individual error:', err);
+          if (typeof err === 'string') {
+            return err;
+          } else if (typeof err === 'object' && err !== null) {
+            if (err.message) {
+              return err.message;
+            } else if (err.path && err.kind) {
+              return `${err.path}: ${err.kind} validation failed`;
+            } else if (err.toString && typeof err.toString === 'function') {
+              const stringified = err.toString();
+              return stringified !== '[object Object]' ? stringified : 'Validation error';
+            }
           }
           return 'Unknown validation error';
         });
         errorMessage = `Validation failed: ${extractedErrors.join(', ')}`;
+        console.error('Extracted error message:', errorMessage);
       } else if (error.code === 11000) {
-        errorMessage = 'Duplicate entry detected. This application may already exist.';
+        // Handle MongoDB duplicate key error
+        const duplicateField = error.keyPattern ? Object.keys(error.keyPattern)[0] : 'unknown field';
+        errorMessage = `Duplicate entry detected for ${duplicateField}. This application may already exist.`;
+        console.error('MongoDB duplicate key error:', errorMessage);
+      } else if (error.name === 'ValidationError') {
+        errorMessage = 'Application data validation failed. Please check your information and try again.';
+        console.error('Generic validation error:', errorMessage);
       } else {
-        errorMessage = 'Application submission failed due to invalid data format.';
+        errorMessage = 'Application submission failed due to server error.';
+        console.error('Generic server error:', errorMessage);
       }
     }
 

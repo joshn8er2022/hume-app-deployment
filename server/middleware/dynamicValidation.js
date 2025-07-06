@@ -8,20 +8,38 @@ const FormConfiguration = require('../models/FormConfiguration');
 const validateDynamicApplication = async (req, res, next) => {
   console.log('=== DYNAMIC VALIDATION MIDDLEWARE ===');
   console.log('Validating request body:', JSON.stringify(req.body, null, 2));
+  console.log('Request headers:', JSON.stringify(req.headers, null, 2));
+  console.log('Request method:', req.method);
+  console.log('Request URL:', req.url);
   
   try {
     const { applicationType = 'clinical', ...requestData } = req.body;
     
     // Get the active form configuration for this application type
-    const formConfig = await FormConfiguration.getActiveFormByType(applicationType);
+    let formConfig = await FormConfiguration.getActiveFormByType(applicationType);
     
     if (!formConfig) {
       console.log(`No active form configuration found for application type: ${applicationType}`);
-      return res.status(400).json({
-        success: false,
-        error: `No form configuration available for application type: ${applicationType}`,
-        errorType: 'CONFIGURATION_ERROR'
-      });
+      console.log('Attempting to create default form configuration...');
+      
+      try {
+        // Try to create a default form configuration
+        const { createDefaultFormForType } = require('../utils/initializeDefaultForms');
+        const mongoose = require('mongoose');
+        const defaultUserId = new mongoose.Types.ObjectId();
+        
+        const newFormConfig = await createDefaultFormForType(applicationType, defaultUserId);
+        console.log(`✓ Created default form configuration: ${newFormConfig.name}`);
+        
+        // Use the newly created form config
+        formConfig = newFormConfig;
+      } catch (createError) {
+        console.error('Failed to create default form configuration:', createError.message);
+        
+        // Fallback to legacy validation without form config
+        console.log('Falling back to legacy validation without form configuration');
+        return next(); // Skip dynamic validation, let legacy validation handle it
+      }
     }
     
     console.log(`Using form configuration: ${formConfig.name} v${formConfig.version}`);
@@ -45,6 +63,29 @@ const validateDynamicApplication = async (req, res, next) => {
     console.log('=== EXTRACTED RESPONSE DATA ===');
     console.log(JSON.stringify(responseData, null, 2));
     
+    console.log('=== FORM CONFIGURATION ANALYSIS ===');
+    console.log(`Form: ${formConfig.name} v${formConfig.version}`);
+    console.log(`Total fields in form: ${formConfig.fields.length}`);
+    console.log('Required fields:', formConfig.fields.filter(f => f.required).map(f => f.fieldId));
+    console.log('Optional fields:', formConfig.fields.filter(f => !f.required).map(f => f.fieldId));
+    console.log('Fields in request data:', Object.keys(responseData));
+    
+    // Check which required fields are missing
+    const requiredFields = formConfig.fields.filter(f => f.required);
+    const missingFields = requiredFields.filter(field => {
+      const value = responseData[field.fieldId];
+      return !value || (typeof value === 'string' && value.trim() === '');
+    });
+    
+    if (missingFields.length > 0) {
+      console.log('=== MISSING REQUIRED FIELDS ===');
+      missingFields.forEach(field => {
+        console.log(`- ${field.fieldId} (${field.label}): required but missing or empty`);
+      });
+    } else {
+      console.log('✓ All required fields are present');
+    }
+    
     // Validate the response data against form configuration
     const validationResult = await validateResponseData(responseData, formConfig);
     
@@ -53,11 +94,25 @@ const validateDynamicApplication = async (req, res, next) => {
       console.log('Errors:', validationResult.errors);
       console.log('Warnings:', validationResult.warnings);
       
+      // Extract clean error messages for client consumption
+      const errorMessages = validationResult.errors.map(error => {
+        if (typeof error === 'string') {
+          return error;
+        } else if (typeof error === 'object' && error !== null) {
+          return error.message || `${error.label || error.field || 'Field'} validation failed`;
+        }
+        return 'Validation error occurred';
+      });
+      
+      console.log('=== EXTRACTED ERROR MESSAGES ===');
+      console.log('Clean messages for client:', errorMessages);
+      
       return res.status(400).json({
         success: false,
-        error: 'Form validation failed',
+        error: `Form validation failed: ${errorMessages.join(', ')}`,
         errorType: 'VALIDATION_ERROR',
-        details: validationResult.errors,
+        details: errorMessages, // Send clean string messages
+        rawDetails: validationResult.errors, // Keep original objects for debugging
         warnings: validationResult.warnings.length > 0 ? validationResult.warnings : undefined,
         formConfiguration: {
           id: formConfig._id,
