@@ -24,9 +24,28 @@ async function fixDatabaseIndexes() {
       index.key && (
         index.key['fields.fieldId'] === 1 ||
         index.key['fields.fieldId'] === -1 ||
-        (index.unique && index.key['fields.fieldId'])
+        (index.unique && index.key['fields.fieldId']) ||
+        index.name === 'fields.fieldId_1' // Explicitly target this exact index name
       )
     );
+    
+    // Also try to drop the specific problematic index by name
+    const specificProblematicIndexNames = [
+      'fields.fieldId_1',
+      'fields.fieldId_-1',
+      'fields_fieldId_1',
+      'fields_fieldId_-1'
+    ];
+    
+    for (const indexName of specificProblematicIndexNames) {
+      try {
+        console.log(`Attempting to drop specific index: ${indexName}`);
+        await collection.dropIndex(indexName);
+        console.log(`✓ Specific index ${indexName} dropped successfully`);
+      } catch (dropError) {
+        console.log(`⚠ Index ${indexName} not found or already dropped: ${dropError.message}`);
+      }
+    }
     
     for (const index of problematicIndexes) {
       try {
