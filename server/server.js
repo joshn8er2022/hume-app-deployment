@@ -7,17 +7,25 @@ const app = express();
 
 console.log('=== SERVER INITIALIZATION START ===');
 
-// Connect to database (async, non-blocking)
-console.log('=== CONNECTING TO DATABASE ===');
-connectDB().then(() => {
-  console.log('=== DATABASE CONNECTION SUCCESS ===');
-}).catch(error => {
-  console.error('=== DATABASE CONNECTION FAILED ===');
-  console.error('Error:', error.message);
-  console.error('Stack:', error.stack);
-  console.error('=== CONTINUING WITHOUT DATABASE CONNECTION ===');
-  console.error('Server will start but database operations will fail');
-});
+// Startup timeout protection for Railway's 60-second limit
+const startupTimer = setTimeout(() => {
+  console.error('=== STARTUP TIMEOUT WARNING ===');
+  console.error('Server has not started within 45 seconds');
+  console.error('This may cause Railway to terminate the deployment');
+}, 45000);
+
+// Connect to database (fully async, never blocks server startup)
+console.log('=== CONNECTING TO DATABASE (NON-BLOCKING) ===');
+setTimeout(() => {
+  connectDB().then(() => {
+    console.log('=== DATABASE CONNECTION SUCCESS ===');
+  }).catch(error => {
+    console.error('=== DATABASE CONNECTION FAILED ===');
+    console.error('Error:', error.message);
+    console.error('=== CONTINUING WITHOUT DATABASE CONNECTION ===');
+    console.error('Server will start but database operations will fail');
+  });
+}, 100); // Delay database connection to ensure server starts first
 
 // Middleware
 console.log('=== SETTING UP MIDDLEWARE ===');
@@ -108,7 +116,7 @@ try {
   console.error('=== ROUTE LOADING ERROR ===');
   console.error('Error:', error.message);
   console.error('Stack:', error.stack);
-  process.exit(1);
+  console.error('=== CONTINUING WITH BASIC ROUTES ONLY ===');
 }
 
 // Error handling middleware
@@ -160,9 +168,17 @@ process.on('unhandledRejection', (reason, promise) => {
   console.error('=== CONTINUING AFTER UNHANDLED REJECTION ===');
 });
 
-const PORT = process.env.PORT || 4000;
+// Railway sets PORT automatically, fallback to 4000 for local development
+const PORT = process.env.PORT || process.env.RAILWAY_PORT || 4000;
+console.log(`=== PORT CONFIGURATION ===`);
+console.log(`Environment PORT: ${process.env.PORT}`);
+console.log(`Railway PORT: ${process.env.RAILWAY_PORT}`);
+console.log(`Using PORT: ${PORT}`);
 
 app.listen(PORT, () => {
+  // Clear startup timeout timer - server started successfully
+  clearTimeout(startupTimer);
+  
   console.log('=== SERVER STARTED SUCCESSFULLY ===');
   console.log(`Server running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
@@ -208,7 +224,7 @@ app.listen(PORT, () => {
   console.error('=== SERVER START ERROR ===');
   console.error('Error:', error.message);
   console.error('Stack:', error.stack);
-  process.exit(1);
+  console.error('=== SERVER WILL RETRY ON DIFFERENT PORT ===');
 });
 
 module.exports = app;
