@@ -1,7 +1,21 @@
 import axios from 'axios';
 
+// Determine the base URL based on environment
+const getBaseURL = () => {
+  // If we're in the browser and the hostname contains vercel.app, use relative URLs
+  if (typeof window !== 'undefined') {
+    if (window.location.hostname.includes('vercel.app') || 
+        window.location.hostname.includes('devtunnels.ms')) {
+      return window.location.origin;
+    }
+  }
+  
+  // Default to localhost for development
+  return 'http://localhost:3000';
+};
+
 const api = axios.create({
-  baseURL: 'http://localhost:3000',
+  baseURL: getBaseURL(),
   headers: {
     'Content-Type': 'application/json',
   },
