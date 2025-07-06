@@ -5,43 +5,93 @@ const FormConfiguration = require('../models/FormConfiguration');
  * This ensures there's always at least one active form available
  */
 async function initializeDefaultForms() {
-  console.log('=== INITIALIZING DEFAULT FORM CONFIGURATIONS ===');
+  console.log('=== INITIALIZING DEFAULT FORM CONFIGURATIONS FOR ALL TYPES ===');
   
   try {
     const applicationTypes = ['clinical', 'affiliate', 'wholesale'];
     const mongoose = require('mongoose');
     const defaultUserId = new mongoose.Types.ObjectId(); // Create a valid ObjectId for system user
     
+    let successCount = 0;
+    let errorCount = 0;
+    
     for (const applicationType of applicationTypes) {
-      console.log(`Checking default form for ${applicationType}...`);
+      console.log(`\n--- Processing ${applicationType.toUpperCase()} application type ---`);
       
-      // Check if a default form already exists for this application type
-      const existingForm = await FormConfiguration.findOne({
-        applicationType,
-        isDefault: true,
-        isActive: true
-      });
-      
-      if (existingForm) {
-        console.log(`✓ Default form already exists for ${applicationType}: ${existingForm.name}`);
+      try {
+        // Check if a default form already exists for this application type
+        const existingForm = await FormConfiguration.findOne({
+          applicationType,
+          isDefault: true,
+          isActive: true
+        });
+        
+        if (existingForm) {
+          console.log(`✓ Default form already exists for ${applicationType}: ${existingForm.name}`);
+          successCount++;
+          continue;
+        }
+        
+        console.log(`Creating default form for ${applicationType}...`);
+        
+        // Create default form configuration with retry logic
+        let attempts = 0;
+        let defaultForm = null;
+        
+        while (attempts < 3 && !defaultForm) {
+          try {
+            attempts++;
+            console.log(`Attempt ${attempts} to create ${applicationType} form...`);
+            
+            defaultForm = await createDefaultFormForType(applicationType, defaultUserId);
+            
+            console.log(`✓ Created default form for ${applicationType}: ${defaultForm.name} (${defaultForm._id})`);
+            successCount++;
+            break;
+            
+          } catch (createError) {
+            console.error(`❌ Attempt ${attempts} failed for ${applicationType}:`, createError.message);
+            
+            if (createError.message.includes('E11000') && attempts < 3) {
+              console.log(`Retrying ${applicationType} form creation (attempt ${attempts + 1})...`);
+              // Wait a bit before retry
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            } else {
+              throw createError;
+            }
+          }
+        }
+        
+        if (!defaultForm) {
+          throw new Error(`Failed to create form after ${attempts} attempts`);
+        }
+        
+      } catch (typeError) {
+        console.error(`❌ FAILED to create ${applicationType} form:`, typeError.message);
+        errorCount++;
+        
+        // Continue with other types even if one fails
         continue;
       }
-      
-      console.log(`Creating default form for ${applicationType}...`);
-      
-      // Create default form configuration
-      const defaultForm = await createDefaultFormForType(applicationType, defaultUserId);
-      
-      console.log(`✓ Created default form for ${applicationType}: ${defaultForm.name} (${defaultForm._id})`);
     }
     
-    console.log('=== DEFAULT FORM CONFIGURATIONS INITIALIZATION COMPLETE ===');
+    console.log('\n=== DEFAULT FORM INITIALIZATION SUMMARY ===');
+    console.log(`✅ Successfully processed: ${successCount}/${applicationTypes.length} application types`);
+    if (errorCount > 0) {
+      console.log(`❌ Failed: ${errorCount}/${applicationTypes.length} application types`);
+    }
+    
+    if (successCount === applicationTypes.length) {
+      console.log('🎉 ALL APPLICATION TYPES NOW HAVE DEFAULT FORMS');
+    } else {
+      console.log('⚠️  Some application types may need manual form creation');
+    }
     
   } catch (error) {
-    console.error('=== ERROR INITIALIZING DEFAULT FORMS ===');
+    console.error('=== CRITICAL ERROR INITIALIZING DEFAULT FORMS ===');
     console.error('Error:', error.message);
     console.error('Stack:', error.stack);
-    console.error('=== CONTINUING WITHOUT DEFAULT FORMS - MANUAL SETUP REQUIRED ===');
+    console.error('=== ALL APPLICATION TYPES NEED MANUAL SETUP ===');
   }
 }
 

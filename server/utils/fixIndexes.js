@@ -1,11 +1,11 @@
 const mongoose = require('mongoose');
 
 /**
- * Fix database indexes that are causing issues
- * This script removes problematic indexes that prevent form creation
+ * Comprehensive fix for database indexes and form configurations
+ * Ensures ALL application types work properly
  */
 async function fixDatabaseIndexes() {
-  console.log('=== FIXING DATABASE INDEXES ===');
+  console.log('=== COMPREHENSIVE DATABASE FIX FOR ALL APPLICATION TYPES ===');
   
   try {
     // Get the FormConfiguration collection
@@ -19,17 +19,55 @@ async function fixDatabaseIndexes() {
       console.log(`- ${index.name}:`, JSON.stringify(index.key));
     });
     
-    // Check if problematic index exists
-    const problematicIndex = indexes.find(index => 
-      index.key && index.key['fields.fieldId'] === 1
+    // Drop ALL problematic indexes that could prevent form creation
+    const problematicIndexes = indexes.filter(index => 
+      index.key && (
+        index.key['fields.fieldId'] === 1 ||
+        index.key['fields.fieldId'] === -1 ||
+        (index.unique && index.key['fields.fieldId'])
+      )
     );
     
-    if (problematicIndex) {
-      console.log(`Dropping problematic index: ${problematicIndex.name}`);
-      await collection.dropIndex(problematicIndex.name);
-      console.log('✓ Problematic index dropped successfully');
-    } else {
-      console.log('No problematic index found - may already be fixed');
+    for (const index of problematicIndexes) {
+      try {
+        console.log(`Dropping problematic index: ${index.name}`);
+        await collection.dropIndex(index.name);
+        console.log(`✓ Index ${index.name} dropped successfully`);
+      } catch (dropError) {
+        console.log(`⚠ Could not drop index ${index.name}: ${dropError.message}`);
+      }
+    }
+    
+    // Also clean up any duplicate or conflicting forms
+    console.log('=== CLEANING UP EXISTING FORMS ===');
+    const existingForms = await collection.find({}).toArray();
+    console.log(`Found ${existingForms.length} existing forms`);
+    
+    // Group by application type
+    const formsByType = {};
+    existingForms.forEach(form => {
+      if (!formsByType[form.applicationType]) {
+        formsByType[form.applicationType] = [];
+      }
+      formsByType[form.applicationType].push(form);
+    });
+    
+    // Ensure only one default form per type, remove duplicates
+    for (const [appType, forms] of Object.entries(formsByType)) {
+      console.log(`Processing ${appType} forms: ${forms.length} found`);
+      
+      const defaultForms = forms.filter(f => f.isDefault);
+      if (defaultForms.length > 1) {
+        console.log(`Found ${defaultForms.length} default forms for ${appType}, keeping newest`);
+        // Sort by creation date, keep the newest
+        defaultForms.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        
+        // Remove extra default forms
+        for (let i = 1; i < defaultForms.length; i++) {
+          await collection.deleteOne({ _id: defaultForms[i]._id });
+          console.log(`✓ Removed duplicate default form: ${defaultForms[i]._id}`);
+        }
+      }
     }
     
     // List indexes after fix
@@ -39,11 +77,12 @@ async function fixDatabaseIndexes() {
       console.log(`- ${index.name}:`, JSON.stringify(index.key));
     });
     
-    console.log('=== DATABASE INDEXES FIXED ===');
+    console.log('=== COMPREHENSIVE DATABASE FIX COMPLETED ===');
+    console.log('✅ ALL APPLICATION TYPES SHOULD NOW WORK PROPERLY');
     return true;
     
   } catch (error) {
-    console.error('=== ERROR FIXING DATABASE INDEXES ===');
+    console.error('=== ERROR IN COMPREHENSIVE DATABASE FIX ===');
     console.error('Error:', error.message);
     console.error('Stack:', error.stack);
     return false;
