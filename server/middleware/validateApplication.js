@@ -81,7 +81,7 @@ const validateApplicationData = (req, res, next) => {
     
     return res.status(400).json({
       success: false,
-      error: 'Validation failed',
+      error: `Validation failed: ${errors.join('; ')}`,
       errorType: 'VALIDATION_ERROR',
       details: errors,
       warnings: warnings.length > 0 ? warnings : undefined
