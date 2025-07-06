@@ -9,15 +9,16 @@ const applicationSchema = new mongoose.Schema({
     default: 'clinical'
   },
   
-  // Form configuration reference
+  // Form configuration reference (optional for backwards compatibility)
   formConfiguration: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'FormConfiguration',
-    required: true
+    required: false // Allow legacy applications without form configuration
   },
   formVersion: {
     type: String,
-    required: true
+    required: false, // Allow legacy applications without version
+    default: '1.0.0'
   },
   
   // Flexible response data storage
@@ -39,8 +40,8 @@ const applicationSchema = new mongoose.Schema({
     type: String,
     lowercase: true,
     trim: true,
-    required: true,
-    index: true
+    required: true
+    // index: true removed to prevent duplicate with schema.index below
   },
   phone: {
     type: String,

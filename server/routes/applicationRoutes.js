@@ -204,12 +204,36 @@ router.post('/', validateApplication.validateApplicationData, async (req, res) =
       
       console.log('=== CALLING APPLICATION SERVICE (Legacy Mode) ===');
       
-      // Create application with legacy data structure
+      // Try to get default form configuration for the application type
+      let defaultFormConfig = null;
+      let formVersion = '1.0.0';
+      
+      try {
+        const FormConfiguration = require('../models/FormConfiguration');
+        defaultFormConfig = await FormConfiguration.findOne({
+          applicationType,
+          isDefault: true,
+          isActive: true
+        });
+        
+        if (defaultFormConfig) {
+          formVersion = defaultFormConfig.version;
+          console.log(`✓ Found default form configuration for ${applicationType}: ${defaultFormConfig._id}`);
+        } else {
+          console.log(`⚠ No default form configuration found for ${applicationType}, will use fallback`);
+        }
+      } catch (formConfigError) {
+        console.log(`⚠ Error finding form configuration: ${formConfigError.message}`);
+      }
+      
+      // Create application with legacy data structure including required fields
       const applicationData = {
         applicationType,
         email,
         firstName,
         lastName,
+        formConfiguration: defaultFormConfig ? defaultFormConfig._id : null,
+        formVersion,
         responseData: {
           ...personalInfo,
           ...businessInfo,
@@ -273,10 +297,20 @@ router.post('/', validateApplication.validateApplicationData, async (req, res) =
     }
     
     if (error.name === 'ValidationError') {
-      const validationErrors = Object.values(error.errors).map(err => err.message);
+      const validationErrors = Object.values(error.errors).map(err => {
+        // Handle complex error objects that might stringify to [object Object]
+        if (typeof err === 'object' && err.message) {
+          return err.message;
+        } else if (typeof err === 'string') {
+          return err;
+        } else {
+          return 'Invalid field value';
+        }
+      });
+      
       return res.status(400).json({
         success: false,
-        error: `Validation error: ${validationErrors.join(', ')}`,
+        error: `Validation failed: ${validationErrors.join(', ')}`,
         errorType: 'VALIDATION_ERROR',
         fields: validationErrors
       });
@@ -298,10 +332,35 @@ router.post('/', validateApplication.validateApplicationData, async (req, res) =
       });
     }
     
+    // Handle any remaining errors that might contain [object Object]
+    let errorMessage = error.message || 'Failed to submit application. Please try again.';
+    
+    // Fix [object Object] errors by extracting meaningful information
+    if (errorMessage.includes('[object Object]')) {
+      console.error('Detected [object Object] in error message, attempting to extract details');
+      console.error('Error object:', error);
+      console.error('Error properties:', Object.keys(error));
+      
+      // Try to extract meaningful error information
+      if (error.errors) {
+        const extractedErrors = Object.values(error.errors).map(err => {
+          if (typeof err === 'object' && err.message) {
+            return err.message;
+          }
+          return 'Unknown validation error';
+        });
+        errorMessage = `Validation failed: ${extractedErrors.join(', ')}`;
+      } else if (error.code === 11000) {
+        errorMessage = 'Duplicate entry detected. This application may already exist.';
+      } else {
+        errorMessage = 'Application submission failed due to invalid data format.';
+      }
+    }
+
     // Generic server error with development details
     res.status(500).json({
       success: false,
-      error: 'Failed to submit application. Please try again.',
+      error: errorMessage,
       errorType: 'INTERNAL_ERROR',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined,
       timestamp: new Date().toISOString()
