@@ -9,7 +9,8 @@ async function initializeDefaultForms() {
   
   try {
     const applicationTypes = ['clinical', 'affiliate', 'wholesale'];
-    const defaultUserId = 'system'; // System user for auto-created forms
+    const mongoose = require('mongoose');
+    const defaultUserId = new mongoose.Types.ObjectId(); // Create a valid ObjectId for system user
     
     for (const applicationType of applicationTypes) {
       console.log(`Checking default form for ${applicationType}...`);

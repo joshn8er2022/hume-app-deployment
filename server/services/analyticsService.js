@@ -821,3 +821,25 @@ class AnalyticsService {
         total: 2450,
         successful: 2401,
         failed: 49,
+        errorRate: 2.0
+      },
+      responseTime: {
+        average: avgResponseTime,
+        p95: p95ResponseTime,
+        p99: p99ResponseTime
+      },
+      resourceUsage: {
+        cpu: cpuUsage,
+        memory: memoryUsage,
+        disk: diskUsage
+      },
+      uptime: {
+        hours: uptimeHours,
+        formatted: `${Math.floor(uptimeHours / 24)}d ${uptimeHours % 24}h`
+      },
+      timestamp: now.toISOString()
+    };
+  }
+}
+
+module.exports = AnalyticsService;
