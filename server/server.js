@@ -7,9 +7,11 @@ const app = express();
 
 console.log('=== SERVER INITIALIZATION START ===');
 
-// Connect to database
+// Connect to database (async, non-blocking)
 console.log('=== CONNECTING TO DATABASE ===');
-connectDB().catch(error => {
+connectDB().then(() => {
+  console.log('=== DATABASE CONNECTION SUCCESS ===');
+}).catch(error => {
   console.error('=== DATABASE CONNECTION FAILED ===');
   console.error('Error:', error.message);
   console.error('Stack:', error.stack);
@@ -145,14 +147,14 @@ process.on('uncaughtException', (error) => {
   console.error('=== UNCAUGHT EXCEPTION ===');
   console.error('Error:', error.message);
   console.error('Stack:', error.stack);
-  process.exit(1);
+  console.error('=== CONTINUING AFTER UNCAUGHT EXCEPTION ===');
 });
 
 process.on('unhandledRejection', (reason, promise) => {
   console.error('=== UNHANDLED REJECTION ===');
   console.error('Reason:', reason);
   console.error('Promise:', promise);
-  process.exit(1);
+  console.error('=== CONTINUING AFTER UNHANDLED REJECTION ===');
 });
 
 const PORT = process.env.PORT || 4000;
