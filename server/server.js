@@ -52,9 +52,22 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Serve static frontend files
+// Serve static frontend files with cache control
 const path = require('path');
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), {
+  setHeaders: (res, path) => {
+    // Cache HTML files for minimal time to ensure updates are picked up quickly
+    if (path.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
+    // Cache JS and CSS files but allow updates
+    else if (path.endsWith('.js') || path.endsWith('.css')) {
+      res.setHeader('Cache-Control', 'public, max-age=3600'); // 1 hour
+    }
+  }
+}));
 
 // Add request logging middleware
 app.use((req, res, next) => {
@@ -76,8 +89,28 @@ app.get('/health', (req, res) => {
     status: 'healthy',
     timestamp: new Date().toISOString(),
     port: process.env.PORT || 4000,
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    version: 'v1.1-url-fix'
   });
+});
+
+// Debug endpoint to check client build version
+app.get('/debug/client-version', (req, res) => {
+  const fs = require('fs');
+  const path = require('path');
+  try {
+    const publicDir = path.join(__dirname, 'public');
+    const files = fs.readdirSync(path.join(publicDir, 'assets'));
+    const html = fs.readFileSync(path.join(publicDir, 'index.html'), 'utf8');
+    res.json({
+      timestamp: new Date().toISOString(),
+      assetsFiles: files,
+      htmlContent: html,
+      publicDirExists: fs.existsSync(publicDir)
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Routes with error handling
