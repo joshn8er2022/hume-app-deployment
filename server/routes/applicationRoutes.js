@@ -36,7 +36,7 @@ try {
 
 try {
   console.log('=== APPLICATION ROUTES: Loading validation middleware ===');
-  validateApplication = require('./middleware/validateApplication');
+  validateApplication = require('../middleware/validateApplication');
   console.log('=== APPLICATION ROUTES: validation middleware loaded successfully ===');
   console.log('Validation middleware type:', typeof validateApplication);
 } catch (error) {
