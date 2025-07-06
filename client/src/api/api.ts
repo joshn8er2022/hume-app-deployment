@@ -2,13 +2,18 @@ import axios from 'axios';
 
 // Determine the base URL based on environment
 const getBaseURL = () => {
-  // If we're in the browser and the hostname contains deployment domains, use relative URLs
+  // TEMPORARY FIX: Force Railway URL to solve immediate issue
   if (typeof window !== 'undefined') {
     console.log('🔍 CLIENT DEBUG - Window hostname:', window.location.hostname);
     console.log('🔍 CLIENT DEBUG - Window origin:', window.location.origin);
     
+    // Force Railway URL if we're on Railway domain
+    if (window.location.hostname.includes('railway.app')) {
+      console.log('🔍 CLIENT DEBUG - FORCED Railway URL');
+      return 'https://hume-app-deployment-production.up.railway.app';
+    }
+    
     if (window.location.hostname.includes('vercel.app') || 
-        window.location.hostname.includes('railway.app') ||
         window.location.hostname.includes('devtunnels.ms')) {
       console.log('🔍 CLIENT DEBUG - Using production URL:', window.location.origin);
       return window.location.origin;
