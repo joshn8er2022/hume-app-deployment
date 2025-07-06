@@ -1,12 +1,10 @@
 const express = require('express');
 const path = require('path');
 const mongoose = require('mongoose');
+const metrics = require('../utils/metrics');
 const router = express.Router();
 
-// Application metrics tracking
-let applicationSubmissionCount = 0;
-let applicationErrors = 0;
-let lastApplicationSubmission = null;
+// Server metrics tracking
 let serverStartTime = new Date();
 
 // Root path response - serve React app
@@ -75,13 +73,7 @@ router.get('/metrics', (req, res) => {
       },
       startTime: serverStartTime.toISOString()
     },
-    applications: {
-      totalSubmissions: applicationSubmissionCount,
-      totalErrors: applicationErrors,
-      errorRate: applicationSubmissionCount > 0 ? 
-        Math.round((applicationErrors / applicationSubmissionCount) * 100 * 100) / 100 : 0,
-      lastSubmission: lastApplicationSubmission
-    },
+    applications: metrics.getMetrics(),
     database: {
       status: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
       name: mongoose.connection.db ? mongoose.connection.db.databaseName : 'unknown'
@@ -89,23 +81,9 @@ router.get('/metrics', (req, res) => {
   });
 });
 
-// Function to increment application metrics (to be called from application routes)
-const incrementApplicationSubmission = () => {
-  applicationSubmissionCount++;
-  lastApplicationSubmission = new Date().toISOString();
-};
-
-const incrementApplicationError = () => {
-  applicationErrors++;
-};
-
 // Catch-all handler: send back React's index.html file for client-side routing
 router.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
-module.exports = { 
-  router, 
-  incrementApplicationSubmission, 
-  incrementApplicationError 
-};
+module.exports = router;

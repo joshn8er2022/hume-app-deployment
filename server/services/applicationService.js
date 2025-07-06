@@ -199,10 +199,19 @@ class ApplicationService {
   }
 }
 
-console.log('=== APPLICATION SERVICE: Creating service instance ===');
-const serviceInstance = new ApplicationService();
-console.log('=== APPLICATION SERVICE: Service instance created successfully ===');
-console.log('Service instance type:', typeof serviceInstance);
-console.log('Service instance methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(serviceInstance)));
+console.log('=== APPLICATION SERVICE: Creating and exporting service ===');
 
-module.exports = serviceInstance;
+// Create service instance
+const applicationService = new ApplicationService();
+
+// Log available methods
+console.log('=== APPLICATION SERVICE: Service instance created successfully ===');
+console.log('Service instance type:', typeof applicationService);
+console.log('Service instance methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(applicationService)));
+console.log('Available methods:', Object.getOwnPropertyNames(applicationService));
+
+// Test that methods are callable
+console.log('createApplication method exists:', typeof applicationService.createApplication === 'function');
+console.log('getApplicationById method exists:', typeof applicationService.getApplicationById === 'function');
+
+module.exports = applicationService;
