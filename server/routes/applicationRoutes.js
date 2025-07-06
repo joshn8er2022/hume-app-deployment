@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-console.log('=== APPLICATION ROUTES: Starting to load ===');
+console.log('=== APPLICATION ROUTES: Starting to load (Railway Fix v2) ===');
 
 let applicationService;
 let auth;
