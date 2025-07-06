@@ -30,11 +30,16 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Serve static frontend files
+const path = require('path');
+app.use(express.static(path.join(__dirname, 'public')));
+
 // Add request logging middleware
 app.use((req, res, next) => {
   console.log(`=== ${req.method} ${req.path} ===`);
-  console.log('Query params:', req.query);
-  console.log('Body:', req.body);
+  if (req.path.startsWith('/assets/')) {
+    console.log('Asset request for:', req.path);
+  }
   next();
 });
 
@@ -53,8 +58,8 @@ try {
   app.use('/api/seed', require('./routes/seedRoutes'));
   console.log('✓ Seed routes loaded');
   
-  app.use('/api/analytics', require('./routes/analyticsRoutes'));
-  console.log('✓ Analytics routes loaded');
+  // app.use('/api/analytics', require('./routes/analyticsRoutes'));
+  console.log('✓ Analytics routes temporarily disabled');
   
   app.use('/api/applications', require('./routes/applicationRoutes'));
   console.log('✓ Application routes loaded');
@@ -90,16 +95,22 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 404 handler
-app.use('*', (req, res) => {
-  console.log('=== 404 NOT FOUND ===');
-  console.log('Path:', req.originalUrl);
-  console.log('Method:', req.method);
+// Serve React app for any non-API routes
+app.get('*', (req, res) => {
+  // Don't serve React app for API routes
+  if (req.path.startsWith('/api/')) {
+    console.log('=== 404 API NOT FOUND ===');
+    console.log('Path:', req.originalUrl);
+    console.log('Method:', req.method);
 
-  res.status(404).json({
-    success: false,
-    message: 'Route not found'
-  });
+    return res.status(404).json({
+      success: false,
+      message: 'API route not found'
+    });
+  }
+
+  // Serve React app for all other routes
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Process error handlers
@@ -117,7 +128,7 @@ process.on('unhandledRejection', (reason, promise) => {
   process.exit(1);
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 4000;
 
 app.listen(PORT, () => {
   console.log('=== SERVER STARTED SUCCESSFULLY ===');

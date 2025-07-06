@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  hume-app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb+srv://buildoutinc:Salvation44@cluster0.n38cuxk.mongodb.net/HumeJourney
+      - CORS_ORIGIN=http://localhost:3000
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    restart: unless-stopped

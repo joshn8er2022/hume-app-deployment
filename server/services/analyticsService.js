@@ -609,7 +609,7 @@ class AnalyticsService {
 
       const funnel = {
         timeRange,
-        period: `${startDate.toISOString().split('T')[0]} to ${now.toISOString().split('T')[0]}`,
+        period: startDate.toISOString().split('T')[0] + ' to ' + now.toISOString().split('T')[0],
         steps: funnelSteps,
         overallConversionRate: totalVisits > 0 ? ((activeUsers / totalVisits) * 100).toFixed(2) : 0
       };
@@ -656,7 +656,7 @@ class AnalyticsService {
 
     return {
       timeRange,
-      period: `${startDate.toISOString().split('T')[0]} to ${now.toISOString().split('T')[0]}`,
+      period: startDate.toISOString().split('T')[0] + ' to ' + now.toISOString().split('T')[0],
       steps: [
         {
           step: 'Visits',
