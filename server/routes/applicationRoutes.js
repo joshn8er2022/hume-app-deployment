@@ -9,13 +9,14 @@ let validateApplication;
 let metricsTracker;
 
 try {
-  console.log('=== APPLICATION ROUTES: Loading applicationService ===');
-  applicationService = require('../services/applicationService');
-  console.log('=== APPLICATION ROUTES: applicationService loaded successfully ===');
+  console.log('=== APPLICATION ROUTES: Loading simple applicationService ===');
+  applicationService = require('../services/applicationServiceSimple');
+  console.log('=== APPLICATION ROUTES: simple applicationService loaded successfully ===');
   console.log('applicationService type:', typeof applicationService);
   console.log('applicationService methods:', Object.getOwnPropertyNames(applicationService));
+  console.log('createApplication exists:', typeof applicationService.createApplication === 'function');
 } catch (error) {
-  console.error('=== APPLICATION ROUTES: ERROR loading applicationService ===');
+  console.error('=== APPLICATION ROUTES: ERROR loading simple applicationService ===');
   console.error('Error:', error.message);
   console.error('Stack:', error.stack);
   throw error;
