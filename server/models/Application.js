@@ -33,7 +33,7 @@ const applicationSchema = new mongoose.Schema({
   businessType: {
     type: String,
     required: true,
-    enum: ['diabetic', 'wellness', 'longevity', 'glp1', 'telehealth', 'affiliate', 'wholesale', 'other']
+    enum: ['diabetic', 'wellness', 'longevity', 'glp1', 'telehealth', 'affiliate', 'wholesale', 'health-coach', 'other']
   },
   yearsInBusiness: {
     type: String,

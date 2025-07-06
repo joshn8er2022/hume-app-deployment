@@ -117,6 +117,16 @@ router.post('/', async (req, res) => {
       yearsInBusiness = '2-5' // Default if not provided
     } = businessInfo);
 
+    // Normalize business data to match enum values
+    const normalizedBusinessType = businessType ? businessType.toLowerCase().replace(/\s+/g, '-') : businessType;
+    const normalizedYearsInBusiness = yearsInBusiness === '1' ? '0-1' : yearsInBusiness;
+    
+    console.log('=== DATA NORMALIZATION ===');
+    console.log('Original businessType:', businessType);
+    console.log('Normalized businessType:', normalizedBusinessType);
+    console.log('Original yearsInBusiness:', yearsInBusiness);
+    console.log('Normalized yearsInBusiness:', normalizedYearsInBusiness);
+
     ({
       currentChallenges: mainChallenges,
       primaryGoals,
@@ -169,8 +179,8 @@ router.post('/', async (req, res) => {
       email,
       phone,
       companyName,
-      businessType,
-      yearsInBusiness,
+      businessType: normalizedBusinessType,
+      yearsInBusiness: normalizedYearsInBusiness,
       mainChallenges,
       goals,
       timeline,
