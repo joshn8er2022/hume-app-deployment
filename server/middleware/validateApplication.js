@@ -78,10 +78,11 @@ const validateApplicationData = (req, res, next) => {
   if (errors.length > 0) {
     console.log('=== VALIDATION ERRORS ===');
     errors.forEach(error => console.log('ERROR:', error));
-    
+
+    // Always return a string in the error field
     return res.status(400).json({
       success: false,
-      error: `Validation failed: ${errors.join('; ')}`,
+      error: errors.join('; '),
       errorType: 'VALIDATION_ERROR',
       details: errors,
       warnings: warnings.length > 0 ? warnings : undefined
