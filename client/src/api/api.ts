@@ -2,26 +2,22 @@ import axios from 'axios';
 
 // Determine the base URL based on environment
 const getBaseURL = () => {
-  // TEMPORARY FIX: Force Railway URL to solve immediate issue
+  // NUCLEAR OPTION: Always use Railway URL when in production
   if (typeof window !== 'undefined') {
-    console.log('🔍 CLIENT DEBUG - Window hostname:', window.location.hostname);
-    console.log('🔍 CLIENT DEBUG - Window origin:', window.location.origin);
+    console.log('🔍 NUCLEAR DEBUG v3 - Window hostname:', window.location.hostname);
+    console.log('🔍 NUCLEAR DEBUG v3 - Window origin:', window.location.origin);
+    console.log('🔍 NUCLEAR DEBUG v3 - Timestamp:', new Date().toISOString());
     
-    // Force Railway URL if we're on Railway domain
-    if (window.location.hostname.includes('railway.app')) {
-      console.log('🔍 CLIENT DEBUG - FORCED Railway URL');
+    // If we're anywhere other than localhost, force Railway URL
+    if (!window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1')) {
+      console.log('🔍 NUCLEAR DEBUG v3 - FORCING Railway URL for ANY non-localhost');
+      console.log('🔍 NUCLEAR DEBUG v3 - Will call: https://hume-app-deployment-production.up.railway.app');
       return 'https://hume-app-deployment-production.up.railway.app';
-    }
-    
-    if (window.location.hostname.includes('vercel.app') || 
-        window.location.hostname.includes('devtunnels.ms')) {
-      console.log('🔍 CLIENT DEBUG - Using production URL:', window.location.origin);
-      return window.location.origin;
     }
   }
   
   // Default to localhost for development
-  console.log('🔍 CLIENT DEBUG - Using localhost fallback');
+  console.log('🔍 NUCLEAR DEBUG v3 - Using localhost fallback');
   return 'http://localhost:4000';
 };
 
@@ -38,11 +34,12 @@ const api = axios.create({
 // Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
-    console.log('📡 CLIENT DEBUG - Making API request:', {
+    console.log('📡 NUCLEAR DEBUG v3 - Making API request:', {
       method: config.method?.toUpperCase(),
       url: config.url,
       baseURL: config.baseURL,
-      fullURL: `${config.baseURL}${config.url}`
+      fullURL: `${config.baseURL}${config.url}`,
+      timestamp: new Date().toISOString()
     });
     
     // Get token from localStorage

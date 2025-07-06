@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Client URL</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <h1>Debug Client URL Construction</h1>
+    <div id="debug-info"></div>
+    <button onclick="testSubmission()">Test Application Submission</button>
+    <div id="test-results"></div>
+
+    <script>
+        // Replicate the exact getBaseURL logic from the client
+        const getBaseURL = () => {
+            // If we're in the browser and the hostname contains deployment domains, use relative URLs
+            if (typeof window !== 'undefined') {
+                console.log('Window hostname:', window.location.hostname);
+                console.log('Window origin:', window.location.origin);
+                
+                if (window.location.hostname.includes('vercel.app') || 
+                    window.location.hostname.includes('railway.app') ||
+                    window.location.hostname.includes('devtunnels.ms')) {
+                    console.log('Using origin-based URL:', window.location.origin);
+                    return window.location.origin;
+                }
+            }
+            
+            // Default to localhost for development
+            console.log('Using localhost URL');
+            return 'http://localhost:4000';
+        };
+
+        // Display debug information
+        function displayDebugInfo() {
+            const debugInfo = document.getElementById('debug-info');
+            const baseURL = getBaseURL();
+            
+            debugInfo.innerHTML = `
+                <h2>URL Construction Debug</h2>
+                <p><strong>Current hostname:</strong> ${window.location.hostname}</p>
+                <p><strong>Current origin:</strong> ${window.location.origin}</p>
+                <p><strong>Constructed base URL:</strong> ${baseURL}</p>
+                <p><strong>Final API URL:</strong> ${baseURL}/api/applications</p>
+                <p><strong>Is Railway domain:</strong> ${window.location.hostname.includes('railway.app')}</p>
+                <p><strong>Is Vercel domain:</strong> ${window.location.hostname.includes('vercel.app')}</p>
+                <p><strong>Is DevTunnels domain:</strong> ${window.location.hostname.includes('devtunnels.ms')}</p>
+            `;
+        }
+
+        // Test the actual submission
+        async function testSubmission() {
+            const resultsDiv = document.getElementById('test-results');
+            const baseURL = getBaseURL();
+            const apiURL = `${baseURL}/api/applications`;
+            
+            resultsDiv.innerHTML = `<h3>Testing API call to: ${apiURL}</h3>`;
+            
+            try {
+                console.log('Making test API call to:', apiURL);
+                
+                const testData = {
+                    applicationType: 'clinical',
+                    personalInfo: {
+                        firstName: 'Test',
+                        lastName: 'User',
+                        email: 'test@example.com',
+                        phone: '555-0123'
+                    },
+                    businessInfo: {
+                        companyName: 'Test Company',
+                        businessType: 'Diabetic Practice',
+                        yearsInBusiness: '2-5'
+                    },
+                    requirements: {
+                        primaryGoals: ['Improve patient outcomes'],
+                        currentChallenges: 'Test challenge',
+                        timeline: 'short-term'
+                    },
+                    agreements: {
+                        agreedToTerms: true,
+                        marketingConsent: false
+                    }
+                };
+
+                console.log('Sending test data:', testData);
+                
+                const response = await axios.post(apiURL, testData, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    timeout: 10000 // 10 second timeout
+                });
+                
+                console.log('API Response:', response);
+                resultsDiv.innerHTML += `
+                    <div style="background: #d4edda; padding: 10px; border-radius: 5px; margin: 10px 0;">
+                        <h4>✅ Success!</h4>
+                        <p><strong>Status:</strong> ${response.status}</p>
+                        <p><strong>Response:</strong> ${JSON.stringify(response.data, null, 2)}</p>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('API Error:', error);
+                
+                let errorDetails = '';
+                if (error.response) {
+                    errorDetails = `
+                        <p><strong>Response Status:</strong> ${error.response.status}</p>
+                        <p><strong>Response Data:</strong> ${JSON.stringify(error.response.data, null, 2)}</p>
+                        <p><strong>Response Headers:</strong> ${JSON.stringify(error.response.headers, null, 2)}</p>
+                    `;
+                } else if (error.request) {
+                    errorDetails = `
+                        <p><strong>Request made but no response received</strong></p>
+                        <p><strong>Request:</strong> ${error.request}</p>
+                        <p><strong>Possible causes:</strong> Network issue, CORS, server not running</p>
+                    `;
+                } else {
+                    errorDetails = `
+                        <p><strong>Error setting up request:</strong> ${error.message}</p>
+                    `;
+                }
+                
+                resultsDiv.innerHTML += `
+                    <div style="background: #f8d7da; padding: 10px; border-radius: 5px; margin: 10px 0;">
+                        <h4>❌ Error!</h4>
+                        <p><strong>Error Type:</strong> ${error.name || 'Unknown'}</p>
+                        <p><strong>Error Message:</strong> ${error.message}</p>
+                        ${errorDetails}
+                    </div>
+                `;
+            }
+        }
+
+        // Run debug info on page load
+        document.addEventListener('DOMContentLoaded', displayDebugInfo);
+    </script>
+</body>
+</html>
