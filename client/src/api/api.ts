@@ -4,19 +4,27 @@ import axios from 'axios';
 const getBaseURL = () => {
   // If we're in the browser and the hostname contains deployment domains, use relative URLs
   if (typeof window !== 'undefined') {
+    console.log('🔍 CLIENT DEBUG - Window hostname:', window.location.hostname);
+    console.log('🔍 CLIENT DEBUG - Window origin:', window.location.origin);
+    
     if (window.location.hostname.includes('vercel.app') || 
         window.location.hostname.includes('railway.app') ||
         window.location.hostname.includes('devtunnels.ms')) {
+      console.log('🔍 CLIENT DEBUG - Using production URL:', window.location.origin);
       return window.location.origin;
     }
   }
   
   // Default to localhost for development
+  console.log('🔍 CLIENT DEBUG - Using localhost fallback');
   return 'http://localhost:4000';
 };
 
+const baseURL = getBaseURL();
+console.log('🚀 CLIENT DEBUG - API base URL set to:', baseURL);
+
 const api = axios.create({
-  baseURL: getBaseURL(),
+  baseURL: baseURL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -25,6 +33,13 @@ const api = axios.create({
 // Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
+    console.log('📡 CLIENT DEBUG - Making API request:', {
+      method: config.method?.toUpperCase(),
+      url: config.url,
+      baseURL: config.baseURL,
+      fullURL: `${config.baseURL}${config.url}`
+    });
+    
     // Get token from localStorage
     const accessToken = localStorage.getItem('accessToken');
     
@@ -35,7 +50,11 @@ api.interceptors.request.use(
     return config;
   },
   (error) => {
-    console.error('API request failed:', error);
+    console.error('🚨 CLIENT DEBUG - API request failed:', {
+      message: error.message,
+      code: error.code,
+      config: error.config
+    });
     return Promise.reject(error);
   }
 );
