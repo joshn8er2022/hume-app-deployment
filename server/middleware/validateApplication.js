@@ -41,7 +41,7 @@ const validateApplicationData = (req, res, next) => {
     errors.push('Business info: Business type is required');
   } else {
     // Validate business type enum
-    const validBusinessTypes = ['diabetic', 'wellness', 'longevity', 'glp1', 'telehealth', 'affiliate', 'wholesale', 'health-coach', 'other'];
+    const validBusinessTypes = ['diabetic', 'wellness', 'longevity', 'glp1', 'telehealth', 'affiliate', 'wholesale', 'health-coach', 'wellness-influencer', 'other'];
     if (!validBusinessTypes.includes(businessInfo.businessType)) {
       warnings.push(`Invalid business type: ${businessInfo.businessType}. Please use one of: ${validBusinessTypes.join(', ')}`);
     }

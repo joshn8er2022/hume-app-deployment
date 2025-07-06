@@ -35,20 +35,28 @@ try {
 }
 
 try {
-  console.log('=== APPLICATION ROUTES: Loading validation middleware ===');
-  validateApplication = require('../middleware/validateApplication');
-  console.log('=== APPLICATION ROUTES: validation middleware loaded successfully ===');
-  console.log('Validation middleware type:', typeof validateApplication);
+  console.log('=== APPLICATION ROUTES: Loading dynamic validation middleware ===');
+  const { validateDynamicApplication } = require('../middleware/dynamicValidation');
+  validateApplication = {
+    validateApplicationData: validateDynamicApplication,
+    validateApplicationUpdate: (req, res, next) => next() // Keep legacy update validation for now
+  };
+  console.log('=== APPLICATION ROUTES: dynamic validation middleware loaded successfully ===');
 } catch (error) {
-  console.error('=== APPLICATION ROUTES: ERROR loading validation middleware ===');
+  console.error('=== APPLICATION ROUTES: ERROR loading dynamic validation middleware ===');
   console.error('Error:', error.message);
   console.error('Stack:', error.stack);
-  // Don't throw error - make validation optional for now
-  console.log('=== VALIDATION MIDDLEWARE DISABLED - CONTINUING WITHOUT VALIDATION ===');
-  validateApplication = {
-    validateApplicationData: (req, res, next) => next(),
-    validateApplicationUpdate: (req, res, next) => next()
-  };
+  // Fallback to legacy validation if dynamic validation fails
+  try {
+    validateApplication = require('../middleware/validateApplication');
+    console.log('=== FALLBACK: Using legacy validation middleware ===');
+  } catch (legacyError) {
+    console.log('=== VALIDATION MIDDLEWARE DISABLED - CONTINUING WITHOUT VALIDATION ===');
+    validateApplication = {
+      validateApplicationData: (req, res, next) => next(),
+      validateApplicationUpdate: (req, res, next) => next()
+    };
+  }
 }
 
 try {
@@ -87,133 +95,152 @@ router.post('/test', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
-  // Define variables at function scope for error logging
-  let firstName, lastName, email, phone, companyName, businessType, yearsInBusiness, mainChallenges, goals, timeline;
-  
+router.post('/', validateApplication.validateApplicationData, async (req, res) => {
   try {
-    console.log('=== APPLICATION ROUTE: POST /api/clinic-applications ===');
+    console.log('=== APPLICATION ROUTE: POST /api/clinic-applications (Dynamic Validation) ===');
     console.log('Request received at:', new Date().toISOString());
-    console.log('Request headers:', JSON.stringify(req.headers, null, 2));
-    console.log('Request body keys:', Object.keys(req.body));
-    console.log('Request body:', JSON.stringify(req.body, null, 2));
-    console.log('Application type:', req.body.applicationType);
-    console.log('Email:', req.body.email);
-
-    // Extract data from nested structure
-    const { personalInfo = {}, businessInfo = {}, requirements = {}, applicationType = 'clinical' } = req.body;
+    console.log('Validated data available:', !!req.validatedData);
     
-    // Validate required fields - assign to function-scoped variables
-    ({
-      firstName,
-      lastName,
-      email,
-      phone
-    } = personalInfo);
-
-    ({
-      companyName,
-      businessType,
-      yearsInBusiness = '2-5' // Default if not provided
-    } = businessInfo);
-
-    // Normalize business data to match enum values
-    const normalizedBusinessType = businessType ? businessType.toLowerCase().replace(/\s+/g, '-') : businessType;
-    const normalizedYearsInBusiness = yearsInBusiness === '1' ? '0-1' : yearsInBusiness;
-    
-    console.log('=== DATA NORMALIZATION ===');
-    console.log('Original businessType:', businessType);
-    console.log('Normalized businessType:', normalizedBusinessType);
-    console.log('Original yearsInBusiness:', yearsInBusiness);
-    console.log('Normalized yearsInBusiness:', normalizedYearsInBusiness);
-
-    ({
-      currentChallenges: mainChallenges,
-      primaryGoals,
-      timeline
-    } = requirements);
-
-    // Convert primaryGoals array to goals string
-    goals = Array.isArray(primaryGoals) ? primaryGoals.join(', ') : primaryGoals || '';
-
-    console.log('=== VALIDATION CHECK ===');
-    console.log('firstName:', firstName);
-    console.log('lastName:', lastName);
-    console.log('email:', email);
-    console.log('phone:', phone);
-    console.log('companyName:', companyName);
-    console.log('businessType:', businessType);
-    console.log('mainChallenges:', mainChallenges);
-    console.log('goals:', goals);
-    console.log('timeline:', timeline);
-
-    if (!firstName || !lastName || !email || !phone || !companyName || !businessType || !mainChallenges || !goals || !timeline || !yearsInBusiness) {
-      console.log('Missing required fields in application submission');
-      console.log('Missing field details:', { firstName: !!firstName, lastName: !!lastName, email: !!email, phone: !!phone, companyName: !!companyName, businessType: !!businessType, mainChallenges: !!mainChallenges, goals: !!goals, timeline: !!timeline, yearsInBusiness: !!yearsInBusiness });
-      return res.status(400).json({
-        success: false,
-        error: 'Missing required fields. Please fill in all required information.'
-      });
-    }
-
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      console.log('Invalid email format:', email);
-      return res.status(400).json({
-        success: false,
-        error: 'Please provide a valid email address.'
-      });
-    }
-
-    console.log('=== CALLING APPLICATION SERVICE ===');
-    console.log('About to call applicationService.createApplication');
-    console.log('applicationService exists:', !!applicationService);
-    console.log('createApplication method exists:', !!applicationService.createApplication);
-
-    // Create application with flattened data
-    const applicationData = {
-      applicationType,
-      firstName,
-      lastName,
-      email,
-      phone,
-      companyName,
-      businessType: normalizedBusinessType,
-      yearsInBusiness: normalizedYearsInBusiness,
-      mainChallenges,
-      goals,
-      timeline,
-      // Include additional fields from nested structure
-      ...businessInfo,
-      ...requirements,
-      personalInfo,
-      businessInfo,
-      requirements
-    };
-
-    // Create application
-    const application = await applicationService.createApplication(applicationData);
-
-    // Track successful submission
-    if (metricsTracker && metricsTracker.incrementApplicationSubmission) {
-      metricsTracker.incrementApplicationSubmission();
-    }
-
-    console.log('=== APPLICATION CREATED SUCCESSFULLY ===');
-    console.log('Application created successfully with ID:', application._id);
-    console.log('Application status:', application.status);
-    console.log('Application createdAt:', application.createdAt);
-
-    res.status(201).json({
-      success: true,
-      message: 'Application submitted successfully',
-      data: {
-        applicationId: application._id,
-        status: application.status,
-        submittedAt: application.createdAt
+    // Check if we have validated data from dynamic validation middleware
+    if (req.validatedData) {
+      console.log('=== USING DYNAMIC VALIDATION DATA ===');
+      console.log('Form configuration:', req.validatedData.formConfiguration);
+      console.log('Form version:', req.validatedData.formVersion);
+      console.log('Application type:', req.validatedData.applicationType);
+      
+      const {
+        responseData,
+        formConfiguration,
+        formVersion,
+        applicationType,
+        validationMetadata
+      } = req.validatedData;
+      
+      // Create application with dynamic data structure
+      const applicationData = {
+        applicationType,
+        formConfiguration,
+        formVersion,
+        responseData,
+        validationMetadata,
+        
+        // Backwards compatibility - populate legacy fields
+        email: responseData.email,
+        firstName: responseData.firstName,
+        lastName: responseData.lastName,
+        phone: responseData.phone,
+        companyName: responseData.companyName,
+        businessType: responseData.businessType,
+        yearsInBusiness: responseData.yearsInBusiness,
+        mainChallenges: responseData.mainChallenges || responseData.currentChallenges,
+        goals: responseData.goals || responseData.primaryGoals,
+        timeline: responseData.timeline,
+        
+        // Additional analytics and metadata
+        submissionMetadata: {
+          ipAddress: req.ip || req.connection.remoteAddress,
+          userAgent: req.headers['user-agent'],
+          referrer: req.headers.referer,
+          sessionId: req.headers['x-session-id'] || req.body.sessionId
+        },
+        analytics: {
+          startTime: new Date(),
+          submitTime: new Date(),
+          deviceInfo: {
+            userAgent: req.headers['user-agent'],
+            isMobile: /Mobile|Android|iPhone|iPad/.test(req.headers['user-agent'] || '')
+          }
+        }
+      };
+      
+      console.log('=== CALLING APPLICATION SERVICE (Dynamic) ===');
+      console.log('Creating application with dynamic data structure');
+      
+      // Create application
+      const application = await applicationService.createApplication(applicationData);
+      
+      console.log('=== APPLICATION CREATED SUCCESSFULLY (Dynamic) ===');
+      console.log('Application ID:', application._id);
+      console.log('Form configuration used:', formConfiguration);
+      console.log('Quality score:', application.qualityScores?.completeness || 'Not calculated');
+      
+      // Track successful submission
+      if (metricsTracker && metricsTracker.incrementApplicationSubmission) {
+        metricsTracker.incrementApplicationSubmission();
       }
-    });
+      
+      res.status(201).json({
+        success: true,
+        message: 'Application submitted successfully',
+        data: {
+          applicationId: application._id,
+          status: application.status,
+          submittedAt: application.createdAt,
+          formConfiguration: {
+            id: formConfiguration,
+            version: formVersion
+          },
+          qualityScore: application.qualityScores?.completeness,
+          validationWarnings: validationMetadata?.validationWarnings
+        }
+      });
+      
+    } else {
+      console.log('=== FALLBACK: Using legacy validation approach ===');
+      // Fallback to legacy approach if dynamic validation didn't run
+      const { personalInfo = {}, businessInfo = {}, requirements = {}, applicationType = 'clinical' } = req.body;
+      
+      // Extract legacy data structure
+      const email = personalInfo.email || req.body.email;
+      const firstName = personalInfo.firstName || req.body.firstName;
+      const lastName = personalInfo.lastName || req.body.lastName;
+      
+      if (!email) {
+        return res.status(400).json({
+          success: false,
+          error: 'Email is required for application submission.'
+        });
+      }
+      
+      console.log('=== CALLING APPLICATION SERVICE (Legacy Mode) ===');
+      
+      // Create application with legacy data structure
+      const applicationData = {
+        applicationType,
+        email,
+        firstName,
+        lastName,
+        responseData: {
+          ...personalInfo,
+          ...businessInfo,
+          ...requirements,
+          email,
+          firstName,
+          lastName
+        }
+      };
+      
+      // Create application
+      const application = await applicationService.createApplication(applicationData);
+      
+      // Track successful submission
+      if (metricsTracker && metricsTracker.incrementApplicationSubmission) {
+        metricsTracker.incrementApplicationSubmission();
+      }
+      
+      console.log('=== APPLICATION CREATED SUCCESSFULLY (Legacy Mode) ===');
+      console.log('Application ID:', application._id);
+      
+      res.status(201).json({
+        success: true,
+        message: 'Application submitted successfully',
+        data: {
+          applicationId: application._id,
+          status: application.status,
+          submittedAt: application.createdAt
+        }
+      });
+    }
 
   } catch (error) {
     // Track error
@@ -221,16 +248,22 @@ router.post('/', async (req, res) => {
       metricsTracker.incrementApplicationError();
     }
 
-    console.error('=== APPLICATION ROUTE ERROR: POST /api/applications ===');
+    console.error('=== APPLICATION ROUTE ERROR: POST /api/applications (Dynamic/Legacy) ===');
     console.error('Error type:', typeof error);
     console.error('Error name:', error.name);
     console.error('Error message:', error.message);
     console.error('Error stack:', error.stack);
     console.error('Request body received:', JSON.stringify(req.body, null, 2));
-    console.error('Processed application data:', JSON.stringify({ firstName, lastName, email, phone, companyName, businessType, yearsInBusiness, mainChallenges, goals, timeline }, null, 2));
+    console.error('Validation mode:', req.validatedData ? 'Dynamic' : 'Legacy');
+    if (req.validatedData) {
+      console.error('Validated data:', JSON.stringify(req.validatedData, null, 2));
+    }
     
     // Specific error types with structured responses
     if (error.message && error.message.includes('already exists')) {
+      const email = req.validatedData?.responseData?.email || req.body.email || req.body.personalInfo?.email;
+      const applicationType = req.validatedData?.applicationType || req.body.applicationType || 'clinical';
+      
       return res.status(409).json({
         success: false,
         error: error.message,

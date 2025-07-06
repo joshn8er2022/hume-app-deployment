@@ -17,8 +17,18 @@ const startupTimer = setTimeout(() => {
 // Connect to database (fully async, never blocks server startup)
 console.log('=== CONNECTING TO DATABASE (NON-BLOCKING) ===');
 setTimeout(() => {
-  connectDB().then(() => {
+  connectDB().then(async () => {
     console.log('=== DATABASE CONNECTION SUCCESS ===');
+    
+    // Initialize default form configurations
+    try {
+      const { initializeDefaultForms } = require('./utils/initializeDefaultForms');
+      await initializeDefaultForms();
+    } catch (initError) {
+      console.error('=== DEFAULT FORMS INITIALIZATION ERROR ===');
+      console.error('Error:', initError.message);
+      console.error('=== CONTINUING WITHOUT DEFAULT FORMS ===');
+    }
   }).catch(error => {
     console.error('=== DATABASE CONNECTION FAILED ===');
     console.error('Error:', error.message);
@@ -131,8 +141,13 @@ try {
   app.use('/api/seed', require('./routes/seedRoutes'));
   console.log('✓ Seed routes loaded');
   
-  // app.use('/api/analytics', require('./routes/analyticsRoutes'));
-  console.log('✓ Analytics routes temporarily disabled');
+  console.log('=== LOADING: analytics routes ===');
+  app.use('/api/analytics', require('./routes/analyticsRoutes'));
+  console.log('✓ Analytics routes loaded');
+  
+  console.log('=== LOADING: form configuration routes ===');
+  app.use('/api/admin/forms', require('./routes/formConfigurationRoutes'));
+  console.log('✓ Form configuration routes loaded');
   
   app.use('/api/applications', require('./routes/applicationRoutes'));
   console.log('✓ Application routes loaded');
