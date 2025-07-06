@@ -98,6 +98,31 @@ export function ApplicationForm() {
     }
   }
 
+  const extractErrorMessage = (error: any): string => {
+    // Axios or fetch with JSON error response
+    if (error?.response?.data?.error) {
+      return error.response.data.error;
+    }
+    // Fetch API with JSON error
+    if (error?.data?.error) {
+      return error.data.error;
+    }
+    // If error is a string
+    if (typeof error === 'string') {
+      return error;
+    }
+    // If error is an Error instance
+    if (error instanceof Error && error.message) {
+      return error.message;
+    }
+    // If error is an object (avoid [object Object])
+    if (typeof error === 'object') {
+      return JSON.stringify(error);
+    }
+    // Fallback
+    return 'Unknown error';
+  };
+
   const handleSubmit = async () => {
     setLoading(true)
 
@@ -154,16 +179,8 @@ export function ApplicationForm() {
       // Navigate to confirmation page with application ID
       navigate(`/confirmation?type=${applicationType}&id=${response.data._id}`)
     } catch (error: any) {
-      // Try to extract a readable error message from backend or network error
-      let errorMsg = "Please try again or contact support if the problem persists."
-      if (error?.response?.data?.error) {
-        errorMsg = error.response.data.error
-      } else if (error?.message) {
-        errorMsg = error.message
-      } else if (typeof error === 'object') {
-        errorMsg = JSON.stringify(error)
-      }
       console.error('Error submitting application:', error)
+      const errorMsg = extractErrorMessage(error)
       toast({
         title: "Error Submitting Application",
         description: errorMsg,
