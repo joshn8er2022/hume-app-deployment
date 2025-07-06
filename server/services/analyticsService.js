@@ -1,4 +1,3 @@
-```
 const PageView = require('../models/PageView');
 const Conversion = require('../models/Conversion');
 const User = require('../models/User');

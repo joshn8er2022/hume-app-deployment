@@ -75,12 +75,15 @@ app.get('/health', (req, res) => {
 // Routes with error handling
 console.log('=== LOADING ROUTES ===');
 try {
+  console.log('=== LOADING: index routes ===');
   app.use('/', require('./routes/index'));
   console.log('✓ Index routes loaded');
   
+  console.log('=== LOADING: auth routes ===');
   app.use('/api/auth', require('./routes/authRoutes'));
   console.log('✓ Auth routes loaded');
   
+  console.log('=== LOADING: user routes ===');
   app.use('/api/users', require('./routes/userRoutes'));
   console.log('✓ User routes loaded');
   
