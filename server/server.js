@@ -20,6 +20,16 @@ setTimeout(() => {
   connectDB().then(async () => {
     console.log('=== DATABASE CONNECTION SUCCESS ===');
     
+    // Fix database indexes first
+    try {
+      const { fixDatabaseIndexes } = require('./utils/fixIndexes');
+      await fixDatabaseIndexes();
+    } catch (indexError) {
+      console.error('=== INDEX FIX ERROR ===');
+      console.error('Error:', indexError.message);
+      console.error('=== CONTINUING WITH EXISTING INDEXES ===');
+    }
+    
     // Initialize default form configurations
     try {
       const { initializeDefaultForms } = require('./utils/initializeDefaultForms');
