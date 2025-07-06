@@ -59,14 +59,18 @@ router.post('/', async (req, res) => {
 
     const {
       companyName,
-      businessType
+      businessType,
+      yearsInBusiness = '2-5' // Default if not provided
     } = businessInfo;
 
     const {
       currentChallenges: mainChallenges,
-      primaryGoals: goals,
+      primaryGoals,
       timeline
     } = requirements;
+
+    // Convert primaryGoals array to goals string
+    const goals = Array.isArray(primaryGoals) ? primaryGoals.join(', ') : primaryGoals || '';
 
     console.log('=== VALIDATION CHECK ===');
     console.log('firstName:', firstName);
@@ -79,8 +83,9 @@ router.post('/', async (req, res) => {
     console.log('goals:', goals);
     console.log('timeline:', timeline);
 
-    if (!firstName || !lastName || !email || !phone || !companyName || !businessType || !mainChallenges || !goals || !timeline) {
+    if (!firstName || !lastName || !email || !phone || !companyName || !businessType || !mainChallenges || !goals || !timeline || !yearsInBusiness) {
       console.log('Missing required fields in application submission');
+      console.log('Missing field details:', { firstName: !!firstName, lastName: !!lastName, email: !!email, phone: !!phone, companyName: !!companyName, businessType: !!businessType, mainChallenges: !!mainChallenges, goals: !!goals, timeline: !!timeline, yearsInBusiness: !!yearsInBusiness });
       return res.status(400).json({
         success: false,
         error: 'Missing required fields. Please fill in all required information.'
@@ -111,6 +116,7 @@ router.post('/', async (req, res) => {
       phone,
       companyName,
       businessType,
+      yearsInBusiness,
       mainChallenges,
       goals,
       timeline,
