@@ -12,7 +12,7 @@ const getBaseURL = () => {
   }
   
   // Default to localhost for development
-  return 'http://localhost:3000';
+  return 'http://localhost:4000';
 };
 
 const api = axios.create({
