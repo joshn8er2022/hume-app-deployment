@@ -55,7 +55,7 @@ const applicationSchema = new mongoose.Schema({
 // Get or create model (handle recompilation in serverless)
 const Application = mongoose.models.Application || mongoose.model('Application', applicationSchema);
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   console.log('=== VERCEL FUNCTION: Applications handler ===');
   console.log('Method:', req.method);
   console.log('URL:', req.url);
