@@ -1,0 +1,27 @@
+{
+  "name": "HumeJourney",
+  "version": "1.0.0",
+  "description": "Hume Connect Client Journey App - MVP",
+  "main": "index.js",
+  "scripts": {
+    "start": "concurrently \"npm run client\" \"npm run server\"",
+    "client": "cd client && npm run dev",
+    "server": "cd server && npm run dev",
+    "install-client": "cd client && npm install",
+    "install-server": "cd server && npm install",
+    "install-all": "npm run install-client && npm run install-server"
+  },
+  "keywords": [
+    "hume",
+    "connect",
+    "client",
+    "journey",
+    "clinic",
+    "healthcare"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
