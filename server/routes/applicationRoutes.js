@@ -5,6 +5,8 @@ console.log('=== APPLICATION ROUTES: Starting to load ===');
 
 let applicationService;
 let auth;
+let validateApplication;
+let metricsTracker;
 
 try {
   console.log('=== APPLICATION ROUTES: Loading applicationService ===');
@@ -31,12 +33,38 @@ try {
   throw error;
 }
 
+try {
+  console.log('=== APPLICATION ROUTES: Loading validation middleware ===');
+  validateApplication = require('../middleware/validateApplication');
+  console.log('=== APPLICATION ROUTES: validation middleware loaded successfully ===');
+  console.log('Validation middleware type:', typeof validateApplication);
+} catch (error) {
+  console.error('=== APPLICATION ROUTES: ERROR loading validation middleware ===');
+  console.error('Error:', error.message);
+  console.error('Stack:', error.stack);
+  throw error;
+}
+
+try {
+  console.log('=== APPLICATION ROUTES: Loading metrics tracker ===');
+  metricsTracker = require('./index');
+  console.log('=== APPLICATION ROUTES: metrics tracker loaded successfully ===');
+} catch (error) {
+  console.error('=== APPLICATION ROUTES: ERROR loading metrics tracker ===');
+  console.error('Error:', error.message);
+  // Don't throw error - metrics are optional
+  metricsTracker = { 
+    incrementApplicationSubmission: () => {}, 
+    incrementApplicationError: () => {} 
+  };
+}
+
 /**
  * @route POST /api/clinic-applications
  * @desc Submit a new clinic application
  * @access Public
  */
-router.post('/', async (req, res) => {
+router.post('/', validateApplication.validateApplicationData, async (req, res) => {
   try {
     console.log('=== APPLICATION ROUTE: POST /api/clinic-applications ===');
     console.log('Request received at:', new Date().toISOString());
@@ -131,6 +159,11 @@ router.post('/', async (req, res) => {
     // Create application
     const application = await applicationService.createApplication(applicationData);
 
+    // Track successful submission
+    if (metricsTracker && metricsTracker.incrementApplicationSubmission) {
+      metricsTracker.incrementApplicationSubmission();
+    }
+
     console.log('=== APPLICATION CREATED SUCCESSFULLY ===');
     console.log('Application created successfully with ID:', application._id);
     console.log('Application status:', application.status);
@@ -147,31 +180,62 @@ router.post('/', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('=== APPLICATION ROUTE ERROR: POST /api/clinic-applications ===');
+    // Track error
+    if (metricsTracker && metricsTracker.incrementApplicationError) {
+      metricsTracker.incrementApplicationError();
+    }
+
+    console.error('=== APPLICATION ROUTE ERROR: POST /api/applications ===');
     console.error('Error type:', typeof error);
     console.error('Error name:', error.name);
     console.error('Error message:', error.message);
     console.error('Error stack:', error.stack);
-    console.error('Error details:', error);
-
+    console.error('Request body received:', JSON.stringify(req.body, null, 2));
+    console.error('Processed application data:', JSON.stringify({ firstName, lastName, email, phone, companyName, businessType, yearsInBusiness, mainChallenges, goals, timeline }, null, 2));
+    
+    // Specific error types with structured responses
     if (error.message && error.message.includes('already exists')) {
       return res.status(409).json({
         success: false,
-        error: error.message
+        error: error.message,
+        errorType: 'DUPLICATE_APPLICATION',
+        details: { email, applicationType }
       });
     }
-
+    
     if (error.name === 'ValidationError') {
       const validationErrors = Object.values(error.errors).map(err => err.message);
       return res.status(400).json({
         success: false,
-        error: `Validation error: ${validationErrors.join(', ')}`
+        error: `Validation error: ${validationErrors.join(', ')}`,
+        errorType: 'VALIDATION_ERROR',
+        fields: validationErrors
       });
     }
-
+    
+    if (error.name === 'MongoNetworkError' || error.name === 'MongoTimeoutError') {
+      return res.status(503).json({
+        success: false,
+        error: 'Database connection failed. Please try again.',
+        errorType: 'DATABASE_ERROR'
+      });
+    }
+    
+    if (error.name === 'CastError') {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid data format provided.',
+        errorType: 'DATA_FORMAT_ERROR'
+      });
+    }
+    
+    // Generic server error with development details
     res.status(500).json({
       success: false,
-      error: 'Failed to submit application. Please try again.'
+      error: 'Failed to submit application. Please try again.',
+      errorType: 'INTERNAL_ERROR',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      timestamp: new Date().toISOString()
     });
   }
 });
@@ -279,7 +343,7 @@ router.get('/:applicationId', async (req, res) => {
  * @desc Update application status (admin only)
  * @access Private
  */
-router.put('/:applicationId', auth, async (req, res) => {
+router.put('/:applicationId', auth, validateApplication.validateApplicationUpdate, async (req, res) => {
   try {
     console.log('=== APPLICATION ROUTE: PUT /api/clinic-applications/:applicationId ===');
     console.log('Application ID:', req.params.applicationId);

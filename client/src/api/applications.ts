@@ -6,18 +6,61 @@ import api from './api';
 // Response: { success: boolean, message: string, data: object }
 export const submitApplication = async (applicationData: any) => {
   try {
+    console.log('Submitting application data:', applicationData);
     const response = await api.post('/api/applications', applicationData);
+    console.log('Application submitted successfully:', response.data);
     return response.data;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Submit application error:', error);
+    console.error('Error response:', error?.response?.data);
     
-    // Handle specific error cases
+    // Handle specific error types from backend
+    if (error?.response?.data?.errorType) {
+      const { errorType, error: errorMessage, details, fields } = error.response.data;
+      
+      switch (errorType) {
+        case 'VALIDATION_ERROR':
+          const validationDetails = Array.isArray(details) ? details : (Array.isArray(fields) ? fields : []);
+          throw new Error(`Validation failed: ${validationDetails.length > 0 ? validationDetails.join(', ') : errorMessage}`);
+        
+        case 'DUPLICATE_APPLICATION':
+          throw new Error('An application with this email already exists for this application type. Please use a different email or contact support if you need to update your existing application.');
+        
+        case 'DATABASE_ERROR':
+          throw new Error('Database connection failed. Please check your internet connection and try again in a few moments.');
+        
+        case 'DATA_FORMAT_ERROR':
+          throw new Error('Invalid data format provided. Please check your information and try again.');
+        
+        case 'INTERNAL_ERROR':
+          const internalMessage = details ? `Internal error: ${details}` : 'An unexpected server error occurred.';
+          throw new Error(`${internalMessage} Please try again or contact support if the problem persists.`);
+        
+        default:
+          throw new Error(errorMessage || 'An unexpected error occurred while submitting your application.');
+      }
+    }
+    
+    // Handle network and connection errors
     if (error?.code === 'ECONNREFUSED') {
-      throw new Error('Server is not running. Please check if the backend server is started.');
+      throw new Error('Unable to connect to the server. Please check your internet connection and try again.');
     }
     
     if (error?.response?.status === 404) {
-      throw new Error('API endpoint not found. Please check the server configuration.');
+      throw new Error('Service temporarily unavailable. Please try again later.');
+    }
+    
+    if (error?.response?.status === 429) {
+      throw new Error('Too many requests. Please wait a moment and try again.');
+    }
+    
+    if (error?.response?.status >= 500) {
+      throw new Error('Server error occurred. Please try again in a few moments.');
+    }
+    
+    // Fallback error handling
+    if (error?.response?.data?.error) {
+      throw new Error(error.response.data.error);
     }
     
     if (error?.response?.data?.message) {
@@ -28,7 +71,7 @@ export const submitApplication = async (applicationData: any) => {
       throw new Error(error.message);
     }
     
-    throw new Error('Failed to submit application. Please try again.');
+    throw new Error('Failed to submit application. Please check your information and try again.');
   }
 };
 
@@ -40,7 +83,7 @@ export const getApplicationStatus = async (applicationId: string) => {
   try {
     const response = await api.get(`/api/applications/${applicationId}`);
     return response.data;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Get application status error:', error);
     
     if (error?.code === 'ECONNREFUSED') {

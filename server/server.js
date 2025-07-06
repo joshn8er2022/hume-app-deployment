@@ -60,7 +60,8 @@ app.use((req, res, next) => {
 // Routes with error handling
 console.log('=== LOADING ROUTES ===');
 try {
-  app.use('/', require('./routes/index'));
+  const indexRoutes = require('./routes/index');
+  app.use('/', indexRoutes.router || indexRoutes);
   console.log('✓ Index routes loaded');
   
   app.use('/api/auth', require('./routes/authRoutes'));
