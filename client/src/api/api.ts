@@ -1,31 +1,8 @@
 import axios from 'axios';
 
-// Determine the base URL based on environment
-const getBaseURL = () => {
-  // NUCLEAR OPTION: Always use Railway URL when in production
-  if (typeof window !== 'undefined') {
-    console.log('🔍 NUCLEAR DEBUG v3 - Window hostname:', window.location.hostname);
-    console.log('🔍 NUCLEAR DEBUG v3 - Window origin:', window.location.origin);
-    console.log('🔍 NUCLEAR DEBUG v3 - Timestamp:', new Date().toISOString());
-    
-    // If we're anywhere other than localhost, force Railway URL
-    if (!window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1')) {
-      console.log('🔍 NUCLEAR DEBUG v3 - FORCING Railway URL for ANY non-localhost');
-      console.log('🔍 NUCLEAR DEBUG v3 - Will call: https://hume-app-deployment-production.up.railway.app');
-      return 'https://hume-app-deployment-production.up.railway.app';
-    }
-  }
-  
-  // Default to localhost for development
-  console.log('🔍 NUCLEAR DEBUG v3 - Using localhost fallback');
-  return 'http://localhost:4000';
-};
-
-const baseURL = getBaseURL();
-console.log('🚀 CLIENT DEBUG - API base URL set to:', baseURL);
-
+// Use relative API path - Vite proxy will handle dev, production serves from same origin
 const api = axios.create({
-  baseURL: baseURL,
+  baseURL: '/api',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -34,14 +11,6 @@ const api = axios.create({
 // Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
-    console.log('📡 NUCLEAR DEBUG v3 - Making API request:', {
-      method: config.method?.toUpperCase(),
-      url: config.url,
-      baseURL: config.baseURL,
-      fullURL: `${config.baseURL}${config.url}`,
-      timestamp: new Date().toISOString()
-    });
-    
     // Get token from localStorage
     const accessToken = localStorage.getItem('accessToken');
     
@@ -52,11 +21,7 @@ api.interceptors.request.use(
     return config;
   },
   (error) => {
-    console.error('🚨 CLIENT DEBUG - API request failed:', {
-      message: error.message,
-      code: error.code,
-      config: error.config
-    });
+    console.error('API request failed:', error.message);
     return Promise.reject(error);
   }
 );

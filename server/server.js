@@ -14,38 +14,35 @@ const startupTimer = setTimeout(() => {
   console.error('This may cause Railway to terminate the deployment');
 }, 45000);
 
-// Connect to database (fully async, never blocks server startup)
-console.log('=== CONNECTING TO DATABASE (NON-BLOCKING) ===');
-setTimeout(() => {
-  connectDB().then(async () => {
-    console.log('=== DATABASE CONNECTION SUCCESS ===');
-    
-    // Fix database indexes first
-    try {
-      const { fixDatabaseIndexes } = require('./utils/fixIndexes');
-      await fixDatabaseIndexes();
-    } catch (indexError) {
-      console.error('=== INDEX FIX ERROR ===');
-      console.error('Error:', indexError.message);
-      console.error('=== CONTINUING WITH EXISTING INDEXES ===');
-    }
-    
-    // Initialize default form configurations
-    try {
-      const { initializeDefaultForms } = require('./utils/initializeDefaultForms');
-      await initializeDefaultForms();
-    } catch (initError) {
-      console.error('=== DEFAULT FORMS INITIALIZATION ERROR ===');
-      console.error('Error:', initError.message);
-      console.error('=== CONTINUING WITHOUT DEFAULT FORMS ===');
-    }
-  }).catch(error => {
-    console.error('=== DATABASE CONNECTION FAILED ===');
-    console.error('Error:', error.message);
-    console.error('=== CONTINUING WITHOUT DATABASE CONNECTION ===');
-    console.error('Server will start but database operations will fail');
-  });
-}, 100); // Delay database connection to ensure server starts first
+// Connect to database (async, but don't delay server startup)
+console.log('=== CONNECTING TO DATABASE ===');
+connectDB().then(async () => {
+  console.log('=== DATABASE CONNECTION SUCCESS ===');
+  
+  // Fix database indexes first
+  try {
+    const { fixDatabaseIndexes } = require('./utils/fixIndexes');
+    await fixDatabaseIndexes();
+  } catch (indexError) {
+    console.error('=== INDEX FIX ERROR ===');
+    console.error('Error:', indexError.message);
+    console.error('=== CONTINUING WITH EXISTING INDEXES ===');
+  }
+  
+  // Initialize default form configurations
+  try {
+    const { initializeDefaultForms } = require('./utils/initializeDefaultForms');
+    await initializeDefaultForms();
+  } catch (initError) {
+    console.error('=== DEFAULT FORMS INITIALIZATION ERROR ===');
+    console.error('Error:', initError.message);
+    console.error('=== CONTINUING WITHOUT DEFAULT FORMS ===');
+  }
+}).catch(error => {
+  console.error('=== DATABASE CONNECTION FAILED ===');
+  console.error('Error:', error.message);
+  console.error('=== SERVER WILL CONTINUE BUT DATABASE OPERATIONS WILL FAIL ===');
+});
 
 // Middleware
 console.log('=== SETTING UP MIDDLEWARE ===');
