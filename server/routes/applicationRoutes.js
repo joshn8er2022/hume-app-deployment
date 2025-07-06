@@ -70,7 +70,24 @@ try {
  * @desc Submit a new clinic application
  * @access Public
  */
-router.post('/', validateApplication.validateApplicationData, async (req, res) => {
+// Simple test endpoint without middleware
+router.post('/test', async (req, res) => {
+  try {
+    console.log('=== TEST ENDPOINT HIT ===');
+    console.log('Request body:', JSON.stringify(req.body, null, 2));
+    res.status(200).json({
+      success: true,
+      message: 'Test endpoint working',
+      timestamp: new Date().toISOString(),
+      data: req.body
+    });
+  } catch (error) {
+    console.error('=== TEST ENDPOINT ERROR ===', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/', async (req, res) => {
   try {
     console.log('=== APPLICATION ROUTE: POST /api/clinic-applications ===');
     console.log('Request received at:', new Date().toISOString());
