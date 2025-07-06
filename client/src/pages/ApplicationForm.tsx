@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { useSearchParams, useNavigate } from "react-router-dom"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -55,7 +55,7 @@ export function ApplicationForm() {
     website: '',
 
     // Requirements
-    primaryGoals: [],
+    primaryGoals: [] as string[],
     currentChallenges: '',
     timeline: '',
     budget: '',
@@ -125,7 +125,7 @@ export function ApplicationForm() {
         },
         businessInfo: {
           companyName: formData.companyName,
-          businessType: formData.businessType,
+          businessType: mapBusinessTypeToBackend(formData.businessType),
           yearsInBusiness: formData.yearsInBusiness,
           currentPatients: formData.currentPatients,
           monthlyRevenue: formData.monthlyRevenue,
@@ -153,11 +153,20 @@ export function ApplicationForm() {
 
       // Navigate to confirmation page with application ID
       navigate(`/confirmation?type=${applicationType}&id=${response.data._id}`)
-    } catch (error) {
+    } catch (error: any) {
+      // Try to extract a readable error message from backend or network error
+      let errorMsg = "Please try again or contact support if the problem persists."
+      if (error?.response?.data?.error) {
+        errorMsg = error.response.data.error
+      } else if (error?.message) {
+        errorMsg = error.message
+      } else if (typeof error === 'object') {
+        errorMsg = JSON.stringify(error)
+      }
       console.error('Error submitting application:', error)
       toast({
         title: "Error Submitting Application",
-        description: error.message || "Please try again or contact support if the problem persists.",
+        description: errorMsg,
         variant: "destructive",
       })
     } finally {
@@ -175,7 +184,7 @@ export function ApplicationForm() {
           'GLP-1 Practice',
           'Telehealth Company',
           'Other Specialty Practice'
-        ]
+        ];
       case 'affiliate':
         return [
           'Marketing Agency',
@@ -183,7 +192,7 @@ export function ApplicationForm() {
           'Wellness Influencer',
           'Business Consultant',
           'Other'
-        ]
+        ];
       case 'wholesale':
         return [
           'Medical Equipment Distributor',
@@ -191,10 +200,31 @@ export function ApplicationForm() {
           'Wellness Center Chain',
           'Corporate Wellness Provider',
           'Other'
-        ]
+        ];
       default:
-        return ['Other']
+        return ['Other'];
     }
+  }
+
+  const mapBusinessTypeToBackend = (displayName: string) => {
+    const mapping = {
+      'Diabetic Practice': 'diabetic',
+      'General Wellness Practice': 'wellness',
+      'Longevity Practice': 'longevity',
+      'GLP-1 Practice': 'glp1',
+      'Telehealth Company': 'telehealth',
+      'Other Specialty Practice': 'other',
+      'Marketing Agency': 'affiliate',
+      'Health Coach': 'health-coach',
+      'Wellness Influencer': 'wellness-influencer',
+      'Business Consultant': 'affiliate',
+      'Medical Equipment Distributor': 'wholesale',
+      'Health Product Retailer': 'wholesale',
+      'Wellness Center Chain': 'wellness',
+      'Corporate Wellness Provider': 'wellness',
+      'Other': 'other'
+    }
+    return mapping[displayName as keyof typeof mapping] || 'other'
   }
 
   const getGoalOptions = () => {
@@ -408,9 +438,9 @@ export function ApplicationForm() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="immediate">Immediate (Within 1 month)</SelectItem>
-                    <SelectItem value="short-term">Short-term (1-3 months)</SelectItem>
-                    <SelectItem value="medium-term">Medium-term (3-6 months)</SelectItem>
-                    <SelectItem value="long-term">Long-term (6+ months)</SelectItem>
+                    <SelectItem value="1-3months">Short-term (1-3 months)</SelectItem>
+                    <SelectItem value="3-6months">Medium-term (3-6 months)</SelectItem>
+                    <SelectItem value="6months+">Long-term (6+ months)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
