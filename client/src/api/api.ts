@@ -2,9 +2,10 @@ import axios from 'axios';
 
 // Determine the base URL based on environment
 const getBaseURL = () => {
-  // If we're in the browser and the hostname contains vercel.app, use relative URLs
+  // If we're in the browser and the hostname contains deployment domains, use relative URLs
   if (typeof window !== 'undefined') {
     if (window.location.hostname.includes('vercel.app') || 
+        window.location.hostname.includes('railway.app') ||
         window.location.hostname.includes('devtunnels.ms')) {
       return window.location.origin;
     }

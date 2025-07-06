@@ -8,9 +8,7 @@ const connectDB = async () => {
     console.log('MongoDB URI:', mongoURI);
     console.log('Connecting to MongoDB...');
 
-    const conn = await mongoose.connect(mongoURI, {
-      useNewUrlParser: true,
-    });
+    const conn = await mongoose.connect(mongoURI);
 
     console.log('=== DATABASE CONNECTION SUCCESS ===');
     console.log(`MongoDB Connected: ${conn.connection.host}`);

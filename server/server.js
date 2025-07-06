@@ -27,6 +27,7 @@ const corsOptions = {
     'http://localhost:4000',
     process.env.CORS_ORIGIN,
     /\.vercel\.app$/,
+    /\.railway\.app$/,
     /\.use\.devtunnels\.ms$/
   ].filter(Boolean),
   credentials: true,

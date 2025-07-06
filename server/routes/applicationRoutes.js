@@ -88,6 +88,9 @@ router.post('/test', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
+  // Define variables at function scope for error logging
+  let firstName, lastName, email, phone, companyName, businessType, yearsInBusiness, mainChallenges, goals, timeline;
+  
   try {
     console.log('=== APPLICATION ROUTE: POST /api/clinic-applications ===');
     console.log('Request received at:', new Date().toISOString());
@@ -100,28 +103,28 @@ router.post('/', async (req, res) => {
     // Extract data from nested structure
     const { personalInfo = {}, businessInfo = {}, requirements = {}, applicationType = 'clinical' } = req.body;
     
-    // Validate required fields
-    const {
+    // Validate required fields - assign to function-scoped variables
+    ({
       firstName,
       lastName,
       email,
       phone
-    } = personalInfo;
+    } = personalInfo);
 
-    const {
+    ({
       companyName,
       businessType,
       yearsInBusiness = '2-5' // Default if not provided
-    } = businessInfo;
+    } = businessInfo);
 
-    const {
+    ({
       currentChallenges: mainChallenges,
       primaryGoals,
       timeline
-    } = requirements;
+    } = requirements);
 
     // Convert primaryGoals array to goals string
-    const goals = Array.isArray(primaryGoals) ? primaryGoals.join(', ') : primaryGoals || '';
+    goals = Array.isArray(primaryGoals) ? primaryGoals.join(', ') : primaryGoals || '';
 
     console.log('=== VALIDATION CHECK ===');
     console.log('firstName:', firstName);
