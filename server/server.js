@@ -13,7 +13,8 @@ connectDB().catch(error => {
   console.error('=== DATABASE CONNECTION FAILED ===');
   console.error('Error:', error.message);
   console.error('Stack:', error.stack);
-  process.exit(1);
+  console.error('=== CONTINUING WITHOUT DATABASE CONNECTION ===');
+  console.error('Server will start but database operations will fail');
 });
 
 // Middleware
@@ -57,6 +58,16 @@ app.use((req, res, next) => {
     console.log('Request body:', JSON.stringify(req.body, null, 2));
   }
   next();
+});
+
+// Health check endpoint (no database required)
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    port: process.env.PORT || 4000,
+    environment: process.env.NODE_ENV || 'development'
+  });
 });
 
 // Routes with error handling

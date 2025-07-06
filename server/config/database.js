@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const connectDB = async () => {
   try {
-    const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/HumeJourney';
+    const mongoURI = process.env.MONGODB_URI || 'mongodb+srv://buildoutinc:Salvation44@cluster0.n38cuxk.mongodb.net/HumeJourney';
 
     console.log('=== DATABASE CONNECTION ATTEMPT ===');
     console.log('MongoDB URI:', mongoURI);
