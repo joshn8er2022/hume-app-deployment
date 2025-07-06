@@ -247,7 +247,8 @@ formConfigurationSchema.index({ applicationType: 1, isActive: 1 });
 formConfigurationSchema.index({ isDefault: 1, applicationType: 1 });
 formConfigurationSchema.index({ version: 1, name: 1 });
 formConfigurationSchema.index({ createdBy: 1 });
-formConfigurationSchema.index({ 'fields.fieldId': 1 });
+// Remove global unique index on fieldId - fieldId only needs to be unique within a form
+// formConfigurationSchema.index({ 'fields.fieldId': 1 });
 
 // Pre-save middleware for validation
 formConfigurationSchema.pre('save', function(next) {
