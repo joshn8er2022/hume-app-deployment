@@ -9,7 +9,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Progress } from "@/components/ui/progress"
 import { ArrowLeft, ArrowRight, CheckCircle, Building2 } from "lucide-react"
-import { submitApplication } from "@/api/applications"
 import { useToast } from "@/hooks/useToast"
 
 export function ApplicationForm() {
@@ -180,24 +179,6 @@ export function ApplicationForm() {
         throw new Error('Please agree to the terms and conditions.')
       }
 
-      const formatPhoneNumber = (phone: string) => {
-        if (!phone) return '';
-        const digits = phone.replace(/\D/g, '');
-        if (digits.length === 10) {
-          return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
-        }
-        return phone; // Return original if not 10 digits
-      };
-
-      const formatWebsiteUrl = (url: string) => {
-        if (!url) return '';
-        if (url && !url.match(/^https?:\/\//)) {
-          return `https://${url}`;
-        }
-        return url;
-      };
-
-      const primaryGoalsString = formData.primaryGoals.join(', ');
 
       const applicationData = {
         applicationType,
@@ -275,26 +256,6 @@ export function ApplicationForm() {
     }
   }
 
-  const mapBusinessTypeToBackend = (displayName: string) => {
-    const mapping = {
-      'Diabetic Practice': 'diabetic',
-      'General Wellness Practice': 'wellness',
-      'Longevity Practice': 'longevity',
-      'GLP-1 Practice': 'glp1',
-      'Telehealth Company': 'telehealth',
-      'Other Specialty Practice': 'other',
-      'Marketing Agency': 'affiliate',
-      'Health Coach': 'health-coach',
-      'Wellness Influencer': 'wellness-influencer',
-      'Business Consultant': 'affiliate',
-      'Medical Equipment Distributor': 'wholesale',
-      'Health Product Retailer': 'wholesale',
-      'Wellness Center Chain': 'wellness',
-      'Corporate Wellness Provider': 'wellness',
-      'Other': 'other'
-    }
-    return mapping[displayName as keyof typeof mapping] || 'other'
-  }
 
   const getGoalOptions = () => {
     switch (applicationType) {
