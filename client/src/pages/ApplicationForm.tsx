@@ -71,9 +71,32 @@ export function ApplicationForm() {
   }, [applicationType, searchParams])
 
   const handleInputChange = (field: string, value: any) => {
+    let formattedValue = value;
+    
+    if (field === 'phone' && typeof value === 'string') {
+      const digits = value.replace(/\D/g, '');
+      if (digits.length <= 10) {
+        if (digits.length >= 6) {
+          formattedValue = `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+        } else if (digits.length >= 3) {
+          formattedValue = `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+        } else {
+          formattedValue = digits;
+        }
+      } else {
+        formattedValue = value; // Keep original if more than 10 digits
+      }
+    }
+    
+    if (field === 'website' && typeof value === 'string' && value.length > 0) {
+      if (!value.match(/^https?:\/\//) && !value.startsWith('http')) {
+        formattedValue = value; // Don't auto-add during typing, only on submit
+      }
+    }
+    
     setFormData(prev => ({
       ...prev,
-      [field]: value
+      [field]: formattedValue
     }))
   }
 
@@ -140,7 +163,12 @@ export function ApplicationForm() {
         throw new Error('Please describe your current challenges (minimum 10 characters).')
       }
 
-      if (!formData.primaryGoals || formData.primaryGoals.length === 0) {
+      let primaryGoalsValid = false;
+      if (Array.isArray(formData.primaryGoals)) {
+        primaryGoalsValid = formData.primaryGoals.length > 0;
+      }
+      
+      if (!primaryGoalsValid) {
         throw new Error('Please select at least one primary goal.')
       }
 
@@ -152,33 +180,48 @@ export function ApplicationForm() {
         throw new Error('Please agree to the terms and conditions.')
       }
 
+      const formatPhoneNumber = (phone: string) => {
+        if (!phone) return '';
+        const digits = phone.replace(/\D/g, '');
+        if (digits.length === 10) {
+          return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+        }
+        return phone; // Return original if not 10 digits
+      };
+
+      const formatWebsiteUrl = (url: string) => {
+        if (!url) return '';
+        if (url && !url.match(/^https?:\/\//)) {
+          return `https://${url}`;
+        }
+        return url;
+      };
+
+      const primaryGoalsString = formData.primaryGoals.join(', ');
+
       const applicationData = {
         applicationType,
-        personalInfo: {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          email: formData.email,
-          phone: formData.phone
-        },
-        businessInfo: {
-          companyName: formData.companyName,
-          businessType: mapBusinessTypeToBackend(formData.businessType),
-          yearsInBusiness: formData.yearsInBusiness,
-          currentPatients: formData.currentPatients,
-          monthlyRevenue: formData.monthlyRevenue,
-          website: formData.website
-        },
-        requirements: {
-          primaryGoals: formData.primaryGoals,
-          currentChallenges: formData.currentChallenges,
-          timeline: formData.timeline,
-          budget: formData.budget,
-          additionalInfo: formData.additionalInfo
-        },
-        agreements: {
-          agreedToTerms: formData.agreedToTerms,
-          marketingConsent: formData.marketingConsent
-        }
+        // Personal information fields (flat)
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phone: formatPhoneNumber(formData.phone),
+        // Business information fields (flat)
+        companyName: formData.companyName,
+        businessType: mapBusinessTypeToBackend(formData.businessType),
+        yearsInBusiness: formData.yearsInBusiness,
+        currentPatients: formData.currentPatients,
+        monthlyRevenue: formData.monthlyRevenue,
+        website: formatWebsiteUrl(formData.website),
+        // Requirements fields (flat)
+        primaryGoals: primaryGoalsString,
+        currentChallenges: formData.currentChallenges,
+        timeline: formData.timeline,
+        budget: formData.budget,
+        additionalInfo: formData.additionalInfo,
+        // Agreements fields (flat)
+        agreedToTerms: formData.agreedToTerms,
+        marketingConsent: formData.marketingConsent
       }
 
       const response = await submitApplication(applicationData)
@@ -333,6 +376,7 @@ export function ApplicationForm() {
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => handleInputChange('phone', e.target.value)}
+                placeholder="(555) 123-4567"
               />
             </div>
           </div>
@@ -427,7 +471,7 @@ export function ApplicationForm() {
                   type="url"
                   value={formData.website}
                   onChange={(e) => handleInputChange('website', e.target.value)}
-                  placeholder="https://..."
+                  placeholder="example.com or https://example.com"
                 />
               </div>
             </div>
