@@ -128,12 +128,24 @@ export function ApplicationForm() {
 
     try {
       // Validate required fields
-      if (!formData.firstName || !formData.lastName || !formData.email) {
+      if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone) {
         throw new Error('Please fill in all required personal information fields.')
       }
 
-      if (!formData.companyName || !formData.businessType) {
+      if (!formData.companyName || !formData.businessType || !formData.yearsInBusiness) {
         throw new Error('Please fill in all required business information fields.')
+      }
+
+      if (!formData.currentChallenges || formData.currentChallenges.trim().length < 10) {
+        throw new Error('Please describe your current challenges (minimum 10 characters).')
+      }
+
+      if (!formData.primaryGoals || formData.primaryGoals.length === 0) {
+        throw new Error('Please select at least one primary goal.')
+      }
+
+      if (!formData.timeline) {
+        throw new Error('Please select an implementation timeline.')
       }
 
       if (!formData.agreedToTerms) {
@@ -315,7 +327,7 @@ export function ApplicationForm() {
               />
             </div>
             <div>
-              <Label htmlFor="phone">Phone Number</Label>
+              <Label htmlFor="phone">Phone Number *</Label>
               <Input
                 id="phone"
                 type="tel"
@@ -359,12 +371,22 @@ export function ApplicationForm() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="yearsInBusiness">Years in Business</Label>
-                <Input
-                  id="yearsInBusiness"
+                <Label htmlFor="yearsInBusiness">Years in Business *</Label>
+                <Select
                   value={formData.yearsInBusiness}
-                  onChange={(e) => handleInputChange('yearsInBusiness', e.target.value)}
-                />
+                  onValueChange={(value) => handleInputChange('yearsInBusiness', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select years in business" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0-1">Less than 1 year</SelectItem>
+                    <SelectItem value="2-5">2-5 years</SelectItem>
+                    <SelectItem value="6-10">6-10 years</SelectItem>
+                    <SelectItem value="11-20">11-20 years</SelectItem>
+                    <SelectItem value="20+">More than 20 years</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label htmlFor="currentPatients">
@@ -417,7 +439,7 @@ export function ApplicationForm() {
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Requirements & Goals</h3>
             <div>
-              <Label>Primary Goals (Select all that apply)</Label>
+              <Label>Primary Goals (Select all that apply) *</Label>
               <div className="grid grid-cols-2 gap-2 mt-2">
                 {getGoalOptions().map((goal) => (
                   <div key={goal} className="flex items-center space-x-2">
@@ -434,7 +456,7 @@ export function ApplicationForm() {
               </div>
             </div>
             <div>
-              <Label htmlFor="currentChallenges">Current Challenges</Label>
+              <Label htmlFor="currentChallenges">Current Challenges *</Label>
               <Textarea
                 id="currentChallenges"
                 value={formData.currentChallenges}
@@ -445,7 +467,7 @@ export function ApplicationForm() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="timeline">Implementation Timeline</Label>
+              <Label htmlFor="timeline">Implementation Timeline *</Label>
                 <Select
                   value={formData.timeline}
                   onValueChange={(value) => handleInputChange('timeline', value)}
