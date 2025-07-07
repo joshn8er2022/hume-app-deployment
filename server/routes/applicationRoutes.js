@@ -95,6 +95,39 @@ router.post('/test', async (req, res) => {
   }
 });
 
+// Simple test endpoint without middleware
+router.post('/test-simple', async (req, res) => {
+  try {
+    console.log('🔍 SIMPLE TEST: Endpoint hit');
+    console.log('Request body:', JSON.stringify(req.body, null, 2));
+    res.status(200).json({
+      success: true,
+      message: 'Simple test endpoint working',
+      timestamp: new Date().toISOString(),
+      data: req.body
+    });
+  } catch (error) {
+    console.error('🔍 SIMPLE TEST ERROR:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/test-validation', validateApplication.validateApplicationData, async (req, res) => {
+  try {
+    console.log('🔍 VALIDATION TEST: Endpoint hit after middleware');
+    console.log('Validated data:', !!req.validatedData);
+    res.status(200).json({
+      success: true,
+      message: 'Validation test endpoint working',
+      hasValidatedData: !!req.validatedData,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('🔍 VALIDATION TEST ERROR:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Debug endpoint to check form configuration
 router.get('/debug/form-config/:applicationType?', async (req, res) => {
   try {
@@ -147,13 +180,81 @@ router.get('/debug/form-config/:applicationType?', async (req, res) => {
   }
 });
 
-router.post('/', validateApplication.validateApplicationData, async (req, res) => {
+router.post('/submit-as-lead', async (req, res) => {
   try {
+    console.log('=== SIMPLIFIED APPLICATION SUBMISSION ===');
+    console.log('Converting application to lead:', req.body);
+    
+    const { 
+      firstName, 
+      lastName, 
+      email, 
+      phone, 
+      companyName, 
+      businessType,
+      applicationType = 'clinical'
+    } = req.body;
+    
+    // Create lead data from application
+    const leadData = {
+      firstName,
+      lastName,
+      email,
+      phone,
+      companyName,
+      businessType,
+      source: `Application Form (${applicationType})`,
+      score: 50,
+      status: 'new'
+    };
+    
+    const Lead = require('../models/Lead');
+    const newLead = new Lead(leadData);
+    const savedLead = await newLead.save();
+    
+    console.log('Lead created successfully:', savedLead._id);
+    
+    res.status(201).json({
+      success: true,
+      message: 'Application submitted successfully and converted to lead',
+      leadId: savedLead._id
+    });
+    
+  } catch (error) {
+    console.error('Error creating lead from application:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to submit application'
+    });
+  }
+});
+
+const requestTimeout = (req, res, next) => {
+  const timeout = setTimeout(() => {
+    console.error('🔍 REQUEST TIMEOUT: Request took longer than 30 seconds');
+    if (!res.headersSent) {
+      res.status(408).json({
+        success: false,
+        error: 'Request timeout - server took too long to process',
+        timestamp: new Date().toISOString()
+      });
+    }
+  }, 30000); // 30 second timeout
+
+  res.on('finish', () => clearTimeout(timeout));
+  next();
+};
+
+router.post('/', requestTimeout, validateApplication.validateApplicationData, async (req, res) => {
+  try {
+    console.log('🔍 STEP 1: Route handler started');
     console.log('=== APPLICATION ROUTE: POST /api/applications (Dynamic Validation) ===');
     console.log('Request received at:', new Date().toISOString());
     console.log('Request body structure:', JSON.stringify(req.body, null, 2));
     console.log('Request body keys:', Object.keys(req.body));
     console.log('Validated data available:', !!req.validatedData);
+    
+    console.log('🔍 STEP 2: Checking request structure...');
     
     // Debug the request structure
     if (req.body.personalInfo) {
@@ -166,9 +267,10 @@ router.post('/', validateApplication.validateApplicationData, async (req, res) =
       console.log('requirements keys:', Object.keys(req.body.requirements));
     }
     
+    console.log('🔍 STEP 3: Checking validation middleware results...');
     // Check if we have validated data from dynamic validation middleware
     if (req.validatedData) {
-      console.log('=== USING DYNAMIC VALIDATION DATA ===');
+      console.log('🔍 STEP 4: USING DYNAMIC VALIDATION DATA ===');
       console.log('Form configuration:', req.validatedData.formConfiguration);
       console.log('Form version:', req.validatedData.formVersion);
       console.log('Application type:', req.validatedData.applicationType);
@@ -218,11 +320,14 @@ router.post('/', validateApplication.validateApplicationData, async (req, res) =
         }
       };
       
-      console.log('=== CALLING APPLICATION SERVICE (Dynamic) ===');
+      console.log('🔍 STEP 4: CALLING APPLICATION SERVICE (Dynamic) ===');
       console.log('Creating application with dynamic data structure');
+      console.log('Application data to be created:', JSON.stringify(applicationData, null, 2));
       
+      console.log('🔍 STEP 5: About to call applicationService.createApplication...');
       // Create application
       const application = await applicationService.createApplication(applicationData);
+      console.log('🔍 STEP 6: applicationService.createApplication completed successfully');
       
       console.log('=== APPLICATION CREATED SUCCESSFULLY (Dynamic) ===');
       console.log('Application ID:', application._id);
@@ -251,7 +356,8 @@ router.post('/', validateApplication.validateApplicationData, async (req, res) =
       });
       
     } else {
-      console.log('=== FALLBACK: Using legacy validation approach ===');
+      console.log('🔍 STEP 3: FALLBACK: Using legacy validation approach ===');
+      console.log('Dynamic validation did not run or failed');
       // Fallback to legacy approach if dynamic validation didn't run
       const { personalInfo = {}, businessInfo = {}, requirements = {}, applicationType = 'clinical' } = req.body;
       
@@ -267,8 +373,9 @@ router.post('/', validateApplication.validateApplicationData, async (req, res) =
         });
       }
       
-      console.log('=== CALLING APPLICATION SERVICE (Legacy Mode) ===');
+      console.log('🔍 STEP 4: CALLING APPLICATION SERVICE (Legacy Mode) ===');
       
+      console.log('🔍 STEP 5: About to find form configuration...');
       // Try to get default form configuration for the application type
       let defaultFormConfig = null;
       let formVersion = '1.0.0';

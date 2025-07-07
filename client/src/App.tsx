@@ -25,7 +25,7 @@ function RootRoute() {
   const { isAuthenticated } = useAuth()
 
   if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />
+    return <Navigate to="/leads" replace />
   } else {
     return <LandingPage />
   }

@@ -4,18 +4,17 @@ import {
   Users, 
   BarChart3, 
   MessageSquare,
-  Settings,
   Building2,
   Zap
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Lead Management', href: '/leads', icon: Users },
-  { name: 'Funnel Builder', href: '/funnels', icon: Zap },
+  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
   { name: 'Communications', href: '/communications', icon: MessageSquare },
+  { name: 'Funnel Builder', href: '/funnels', icon: Zap },
 ]
 
 export function Sidebar() {

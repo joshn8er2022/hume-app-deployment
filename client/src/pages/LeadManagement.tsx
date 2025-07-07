@@ -80,7 +80,7 @@ export function LeadManagement() {
         console.error('Error fetching leads:', error)
         toast({
           title: "Error Loading Leads",
-          description: error.message,
+          description: error instanceof Error ? error.message : 'Failed to load leads',
           variant: "destructive",
         })
       } finally {
@@ -119,7 +119,7 @@ export function LeadManagement() {
       console.error('Error creating lead:', error)
       toast({
         title: "Failed to Create Lead",
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Failed to create lead',
         variant: "destructive",
       })
     }
@@ -141,7 +141,7 @@ export function LeadManagement() {
       console.error('Error updating lead status:', error)
       toast({
         title: "Update Failed",
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Failed to update lead status',
         variant: "destructive",
       })
     }
@@ -169,7 +169,7 @@ export function LeadManagement() {
       console.error('Error adding note:', error)
       toast({
         title: "Failed to Add Note",
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Failed to add note',
         variant: "destructive",
       })
     }
@@ -231,9 +231,14 @@ export function LeadManagement() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-          Lead Management
-        </h1>
+        <div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+            Lead Management
+          </h1>
+          <p className="text-slate-600 dark:text-slate-400 mt-2">
+            Your primary CRM workspace. Create, track, and manage leads through your sales pipeline.
+          </p>
+        </div>
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
           <DialogTrigger asChild>
             <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">

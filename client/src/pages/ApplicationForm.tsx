@@ -201,38 +201,35 @@ export function ApplicationForm() {
 
       const applicationData = {
         applicationType,
-        // Personal information fields (flat)
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,
-        phone: formatPhoneNumber(formData.phone),
-        // Business information fields (flat)
+        phone: formData.phone,
         companyName: formData.companyName,
-        businessType: mapBusinessTypeToBackend(formData.businessType),
-        yearsInBusiness: formData.yearsInBusiness,
-        currentPatients: formData.currentPatients,
-        monthlyRevenue: formData.monthlyRevenue,
-        website: formatWebsiteUrl(formData.website),
-        // Requirements fields (flat)
-        primaryGoals: primaryGoalsString,
-        currentChallenges: formData.currentChallenges,
-        timeline: formData.timeline,
-        budget: formData.budget,
-        additionalInfo: formData.additionalInfo,
-        // Agreements fields (flat)
-        agreedToTerms: formData.agreedToTerms,
-        marketingConsent: formData.marketingConsent
+        businessType: formData.businessType
       }
 
-      const response = await submitApplication(applicationData)
+      const response = await fetch('/api/applications/submit-as-lead', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(applicationData),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to submit application');
+      }
+
+      const result = await response.json()
 
       toast({
         title: "Application Submitted Successfully!",
         description: "We'll review your application and get back to you within 24 hours.",
       })
 
-      // Navigate to confirmation page with application ID
-      navigate(`/confirmation?type=${applicationType}&id=${response.data._id}`)
+      // Navigate to confirmation page with lead ID
+      navigate(`/confirmation?type=${applicationType}&id=${result.leadId}`)
     } catch (error: any) {
       console.error('Error submitting application:', error)
       const errorMsg = extractErrorMessage(error)
