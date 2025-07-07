@@ -149,43 +149,33 @@ export function ApplicationForm() {
     setLoading(true)
 
     try {
-      // Validate required fields
-      if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone) {
+      if (!formData.firstName || !formData.lastName || !formData.email) {
         throw new Error('Please fill in all required personal information fields.')
       }
 
-      if (!formData.companyName || !formData.businessType || !formData.yearsInBusiness) {
+      if (!formData.companyName || !formData.businessType) {
         throw new Error('Please fill in all required business information fields.')
-      }
-
-      if (!formData.currentChallenges || formData.currentChallenges.trim().length < 10) {
-        throw new Error('Please describe your current challenges (minimum 10 characters).')
-      }
-
-      let primaryGoalsValid = false;
-      if (Array.isArray(formData.primaryGoals)) {
-        primaryGoalsValid = formData.primaryGoals.length > 0;
-      }
-      
-      if (!primaryGoalsValid) {
-        throw new Error('Please select at least one primary goal.')
-      }
-
-      if (!formData.timeline) {
-        throw new Error('Please select an implementation timeline.')
       }
 
       if (!formData.agreedToTerms) {
         throw new Error('Please agree to the terms and conditions.')
       }
 
+      const formatPhoneNumber = (phone: string) => {
+        if (!phone) return '';
+        const digits = phone.replace(/\D/g, '');
+        if (digits.length === 10) {
+          return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+        }
+        return phone;
+      };
 
       const applicationData = {
         applicationType,
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,
-        phone: formData.phone,
+        phone: formatPhoneNumber(formData.phone),
         companyName: formData.companyName,
         businessType: formData.businessType
       }

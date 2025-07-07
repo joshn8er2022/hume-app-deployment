@@ -195,6 +195,32 @@ router.post('/submit-as-lead', async (req, res) => {
       applicationType = 'clinical'
     } = req.body;
     
+    console.log('🔍 STEP 1: Mapping business type for Lead model...');
+    const mapBusinessTypeToLead = (displayName) => {
+      const mapping = {
+        'Diabetic Practice': 'diabetic',
+        'General Wellness Practice': 'wellness',
+        'Longevity Practice': 'longevity',
+        'GLP-1 Practice': 'glp1',
+        'Telehealth Company': 'telehealth',
+        'Other Specialty Practice': 'other',
+        'Marketing Agency': 'other',
+        'Health Coach': 'wellness',
+        'Wellness Influencer': 'wellness',
+        'Business Consultant': 'other',
+        'Medical Equipment Distributor': 'other',
+        'Health Product Retailer': 'other',
+        'Wellness Center Chain': 'wellness',
+        'Corporate Wellness Provider': 'wellness',
+        'Other': 'other'
+      };
+      return mapping[displayName] || 'other';
+    };
+    
+    const mappedBusinessType = mapBusinessTypeToLead(businessType);
+    console.log('Business type mapping:', businessType, '->', mappedBusinessType);
+    
+    console.log('🔍 STEP 2: Creating lead data...');
     // Create lead data from application
     const leadData = {
       firstName,
@@ -202,17 +228,22 @@ router.post('/submit-as-lead', async (req, res) => {
       email,
       phone,
       companyName,
-      businessType,
-      source: `Application Form (${applicationType})`,
+      businessType: mappedBusinessType,
+      source: 'website', // Use valid enum value
       score: 50,
       status: 'new'
     };
     
+    console.log('Lead data to be saved:', leadData);
+    
+    console.log('🔍 STEP 3: Creating Lead model instance...');
     const Lead = require('../models/Lead');
     const newLead = new Lead(leadData);
+    
+    console.log('🔍 STEP 4: Saving lead to database...');
     const savedLead = await newLead.save();
     
-    console.log('Lead created successfully:', savedLead._id);
+    console.log('🔍 STEP 5: Lead created successfully:', savedLead._id);
     
     res.status(201).json({
       success: true,
@@ -221,7 +252,12 @@ router.post('/submit-as-lead', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Error creating lead from application:', error);
+    console.error('🔍 ERROR in submit-as-lead endpoint:', error);
+    console.error('Error details:', {
+      name: error.name,
+      message: error.message,
+      stack: error.stack
+    });
     res.status(500).json({
       success: false,
       error: 'Failed to submit application'
