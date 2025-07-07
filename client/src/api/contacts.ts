@@ -1,5 +1,16 @@
 import api from './api';
 
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+    };
+    status?: number;
+  };
+  message?: string;
+  code?: string;
+}
+
 // Description: Get all contacts with detailed information
 // Endpoint: GET /api/contacts
 // Request: {}
@@ -14,23 +25,24 @@ export const getContacts = async () => {
       console.error('Contacts API response indicates failure:', response.data);
       throw new Error('API response indicates failure');
     }
-  } catch (error: any) {
-    console.error('Contacts API error:', error);
+  } catch (error) {
+    const apiError = error as ApiError;
+    console.error('Contacts API error:', apiError);
     
     // Handle specific error cases
-    if (error?.code === 'ECONNREFUSED') {
+    if (apiError?.code === 'ECONNREFUSED') {
       throw new Error('Unable to connect to server. Please check your connection.');
     }
     
-    if (error?.response?.status === 404) {
+    if (apiError?.response?.status === 404) {
       throw new Error('Contacts endpoint not found. Please check server configuration.');
     }
     
-    if (error?.response?.status === 500) {
+    if (apiError?.response?.status === 500) {
       throw new Error('Server error while fetching contacts. Please try again later.');
     }
     
-    throw new Error(error?.response?.data?.message || error?.message || 'Failed to load contacts');
+    throw new Error(apiError?.response?.data?.message || apiError?.message || 'Failed to load contacts');
   }
 };
 
@@ -48,23 +60,24 @@ export const getContactById = async (contactId: string) => {
       console.error('Contact details API response indicates failure:', response.data);
       throw new Error('API response indicates failure');
     }
-  } catch (error: any) {
-    console.error('Contact details API error:', error);
+  } catch (error) {
+    const apiError = error as ApiError;
+    console.error('Contact details API error:', apiError);
     
     // Handle specific error cases
-    if (error?.code === 'ECONNREFUSED') {
+    if (apiError?.code === 'ECONNREFUSED') {
       throw new Error('Unable to connect to server. Please check your connection.');
     }
     
-    if (error?.response?.status === 404) {
+    if (apiError?.response?.status === 404) {
       throw new Error('Contact not found or endpoint not available.');
     }
     
-    if (error?.response?.status === 500) {
+    if (apiError?.response?.status === 500) {
       throw new Error('Server error while fetching contact details. Please try again later.');
     }
     
-    throw new Error(error?.response?.data?.message || error?.message || 'Failed to load contact details');
+    throw new Error(apiError?.response?.data?.message || apiError?.message || 'Failed to load contact details');
   }
 };
 
@@ -82,27 +95,28 @@ export const updateContactTags = async (contactId: string, tags: string[]) => {
       console.error('Update contact tags API response indicates failure:', response.data);
       throw new Error('API response indicates failure');
     }
-  } catch (error: any) {
-    console.error('Update contact tags API error:', error);
+  } catch (error) {
+    const apiError = error as ApiError;
+    console.error('Update contact tags API error:', apiError);
     
     // Handle specific error cases
-    if (error?.code === 'ECONNREFUSED') {
+    if (apiError?.code === 'ECONNREFUSED') {
       throw new Error('Unable to connect to server. Please check your connection.');
     }
     
-    if (error?.response?.status === 404) {
+    if (apiError?.response?.status === 404) {
       throw new Error('Contact not found or endpoint not available.');
     }
     
-    if (error?.response?.status === 400) {
+    if (apiError?.response?.status === 400) {
       throw new Error('Invalid tags data provided.');
     }
     
-    if (error?.response?.status === 500) {
+    if (apiError?.response?.status === 500) {
       throw new Error('Server error while updating contact tags. Please try again later.');
     }
     
-    throw new Error(error?.response?.data?.message || error?.message || 'Failed to update contact tags');
+    throw new Error(apiError?.response?.data?.message || apiError?.message || 'Failed to update contact tags');
   }
 };
 
@@ -120,26 +134,27 @@ export const getFunnelAnalytics = async (timeRange: string) => {
       console.error('Funnel analytics API response indicates failure:', response.data);
       throw new Error('API response indicates failure');
     }
-  } catch (error: any) {
-    console.error('Funnel analytics API error:', error);
+  } catch (error) {
+    const apiError = error as ApiError;
+    console.error('Funnel analytics API error:', apiError);
     
     // Handle specific error cases
-    if (error?.code === 'ECONNREFUSED') {
+    if (apiError?.code === 'ECONNREFUSED') {
       throw new Error('Unable to connect to server. Please check your connection.');
     }
     
-    if (error?.response?.status === 404) {
+    if (apiError?.response?.status === 404) {
       throw new Error('Funnel analytics endpoint not found. Please check server configuration.');
     }
     
-    if (error?.response?.status === 400) {
+    if (apiError?.response?.status === 400) {
       throw new Error('Invalid time range parameter provided.');
     }
     
-    if (error?.response?.status === 500) {
+    if (apiError?.response?.status === 500) {
       throw new Error('Server error while fetching funnel analytics. Please try again later.');
     }
     
-    throw new Error(error?.response?.data?.message || error?.message || 'Failed to load funnel analytics');
+    throw new Error(apiError?.response?.data?.message || apiError?.message || 'Failed to load funnel analytics');
   }
 };

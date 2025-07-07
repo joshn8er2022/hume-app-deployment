@@ -5,12 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Building2, Users, ShoppingCart, ArrowRight, CheckCircle } from "lucide-react"
 import { recordPageView } from "@/api/analytics"
-import { useToast } from "@/hooks/useToast"
 
 export function LandingPage() {
   const [selectedOption, setSelectedOption] = useState("")
   const navigate = useNavigate()
-  const { toast } = useToast()
 
   // Track page view on component mount
   useEffect(() => {

@@ -4,7 +4,6 @@ import {
   Users, 
   BarChart3, 
   MessageSquare,
-  Settings,
   Building2,
   Zap
 } from "lucide-react"

@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
@@ -21,13 +21,12 @@ import {
   User,
   Building2,
   Clock,
-  Play,
   MessageCircle,
   Eye,
   Edit,
   Trash2
 } from "lucide-react"
-import { getCommunications, sendMessage, createCampaign, getCampaignStatistics, deleteCampaign } from "@/api/communications"
+import { getCommunications, createCampaign, getCampaignStatistics, deleteCampaign } from "@/api/communications"
 import { useToast } from "@/hooks/useToast"
 
 interface Communication {
@@ -59,22 +58,27 @@ interface Contact {
   unreadCount: number
 }
 
+interface Campaign {
+  _id: string
+  name: string
+  type: string
+  status: string
+  recipients: number
+  openRate: number
+  responseRate: number
+  createdAt: string
+}
+
 export function Communications() {
   const [communications, setCommunications] = useState<Communication[]>([])
   const [contacts, setContacts] = useState<Contact[]>([])
-  const [campaigns, setCampaigns] = useState<any[]>([])
+  const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [typeFilter, setTypeFilter] = useState("all")
   const [repFilter, setRepFilter] = useState("all")
   const [selectedContact, setSelectedContact] = useState<string | null>(null)
   const [showCampaignDialog, setShowCampaignDialog] = useState(false)
-  const [newMessage, setNewMessage] = useState({
-    type: 'email',
-    recipient: '',
-    subject: '',
-    content: ''
-  })
   const [newCampaign, setNewCampaign] = useState({
     name: '',
     type: 'email',
@@ -110,25 +114,6 @@ export function Communications() {
     fetchCommunications()
   }, [typeFilter, repFilter, selectedContact, toast])
 
-  const handleSendMessage = async () => {
-    try {
-      await sendMessage(newMessage)
-      toast({
-        title: "Message Sent",
-        description: "Your message has been sent successfully.",
-      })
-      setNewMessage({ type: 'email', recipient: '', subject: '', content: '' })
-      const data = await getCommunications({ type: typeFilter, rep: repFilter, contactId: selectedContact })
-      setCommunications(data.communications)
-    } catch (error) {
-      console.error('Error sending message:', error)
-      toast({
-        title: "Failed to Send",
-        description: "Failed to send message. Please try again.",
-        variant: "destructive",
-      })
-    }
-  }
 
   const handleCreateCampaign = async () => {
     try {
@@ -151,7 +136,7 @@ export function Communications() {
     }
   }
 
-  const handleViewCampaignDetails = async (campaign: any) => {
+  const handleViewCampaignDetails = async (campaign: Campaign) => {
     try {
       const statsData = await getCampaignStatistics(campaign._id)
       toast({
@@ -168,7 +153,7 @@ export function Communications() {
     }
   }
 
-  const handleEditCampaign = (campaign: any) => {
+  const handleEditCampaign = () => {
     toast({
       title: "Edit Campaign",
       description: "Campaign editing functionality will be implemented soon.",
@@ -493,7 +478,7 @@ export function Communications() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleEditCampaign(campaign)}
+                          onClick={() => handleEditCampaign()}
                         >
                           <Edit className="mr-2 h-4 w-4" />
                           Edit

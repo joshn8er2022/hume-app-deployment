@@ -1,5 +1,18 @@
 import api from './api';
 
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+  message?: string;
+}
+
+interface LeadData {
+  [key: string]: unknown;
+}
+
 // Description: Record a page view
 // Endpoint: POST /api/analytics/page-views
 // Request: { landingPageId: string, landingPageName: string, landingPageUrl: string, referrer?: string, sessionId?: string }
@@ -14,7 +27,8 @@ export const recordPageView = async (data: {
   try {
     return await api.post('/api/analytics/page-views', data);
   } catch (error) {
-    throw new Error(error?.response?.data?.message || error.message);
+    const apiError = error as ApiError;
+    throw new Error(apiError?.response?.data?.message || apiError?.message || 'An error occurred');
   }
 };
 
@@ -27,13 +41,14 @@ export const recordConversion = async (data: {
   landingPageName: string;
   landingPageUrl: string;
   leadType: string;
-  leadData: any;
+  leadData: LeadData;
   sessionId?: string;
 }) => {
   try {
     return await api.post('/api/analytics/conversions', data);
   } catch (error) {
-    throw new Error(error?.response?.data?.message || error.message);
+    const apiError = error as ApiError;
+    throw new Error(apiError?.response?.data?.message || apiError?.message || 'An error occurred');
   }
 };
 
@@ -45,7 +60,8 @@ export const getLandingPageAnalytics = async (landingPageId: string, timeRange: 
   try {
     return await api.get(`/api/analytics/landing-pages/${landingPageId}?timeRange=${timeRange}`);
   } catch (error) {
-    throw new Error(error?.response?.data?.message || error.message);
+    const apiError = error as ApiError;
+    throw new Error(apiError?.response?.data?.message || apiError?.message || 'An error occurred');
   }
 };
 
@@ -58,7 +74,8 @@ export const getAnalyticsData = async (timeRange: string) => {
     const response = await api.get(`/api/analytics?timeRange=${timeRange}`);
     return response.data.data;
   } catch (error) {
-    throw new Error(error?.response?.data?.message || error.message);
+    const apiError = error as ApiError;
+    throw new Error(apiError?.response?.data?.message || apiError?.message || 'An error occurred');
   }
 };
 
@@ -71,7 +88,8 @@ export const getActiveUsersStats = async (timeRange: string = '30d') => {
     const response = await api.get(`/api/analytics/active-users?timeRange=${timeRange}`);
     return response.data.data;
   } catch (error) {
-    throw new Error(error?.response?.data?.message || error.message);
+    const apiError = error as ApiError;
+    throw new Error(apiError?.response?.data?.message || apiError?.message || 'An error occurred');
   }
 };
 
@@ -84,7 +102,8 @@ export const getUserAcquisitionFunnel = async (timeRange: string = '30d') => {
     const response = await api.get(`/api/analytics/funnel?timeRange=${timeRange}`);
     return response.data.data;
   } catch (error) {
-    throw new Error(error?.response?.data?.message || error.message);
+    const apiError = error as ApiError;
+    throw new Error(apiError?.response?.data?.message || apiError?.message || 'An error occurred');
   }
 };
 
@@ -97,6 +116,7 @@ export const getAppPerformanceMetrics = async () => {
     const response = await api.get('/api/analytics/performance');
     return response.data.data;
   } catch (error) {
-    throw new Error(error?.response?.data?.message || error.message);
+    const apiError = error as ApiError;
+    throw new Error(apiError?.response?.data?.message || apiError?.message || 'An error occurred');
   }
 };

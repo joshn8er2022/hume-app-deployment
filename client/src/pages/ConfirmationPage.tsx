@@ -1,8 +1,8 @@
 import { useSearchParams, useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle, Calendar, MessageSquare, FileText, ArrowRight, Star } from "lucide-react"
+import { CheckCircle, Calendar, MessageSquare, ArrowRight, Star } from "lucide-react"
 
 export function ConfirmationPage() {
   const [searchParams] = useSearchParams()

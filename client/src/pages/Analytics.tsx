@@ -4,7 +4,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import {
-  BarChart,
   Bar,
   XAxis,
   YAxis,
@@ -222,7 +221,7 @@ export function Analytics() {
                   fill="#8884d8"
                   dataKey="count"
                 >
-                  {analyticsData?.leadSources?.map((entry, index) => (
+                  {analyticsData?.leadSources?.map((_, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>

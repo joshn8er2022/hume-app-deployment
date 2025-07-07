@@ -1,5 +1,16 @@
 import api from './api';
 
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+    };
+    status?: number;
+  };
+  message?: string;
+  code?: string;
+}
+
 // Description: Get all landing pages
 // Endpoint: GET /api/funnels/pages
 // Request: {}
@@ -14,23 +25,24 @@ export const getLandingPages = async () => {
       console.error('Landing pages API response indicates failure:', response.data);
       throw new Error('API response indicates failure');
     }
-  } catch (error: any) {
-    console.error('Landing pages API error:', error);
+  } catch (error) {
+    const apiError = error as ApiError;
+    console.error('Landing pages API error:', apiError);
     
     // Handle specific error cases
-    if (error?.code === 'ECONNREFUSED') {
+    if (apiError?.code === 'ECONNREFUSED') {
       throw new Error('Unable to connect to server. Please check your connection.');
     }
     
-    if (error?.response?.status === 404) {
+    if (apiError?.response?.status === 404) {
       throw new Error('Landing pages endpoint not found. Please check server configuration.');
     }
     
-    if (error?.response?.status === 500) {
+    if (apiError?.response?.status === 500) {
       throw new Error('Server error while fetching landing pages. Please try again later.');
     }
     
-    throw new Error(error?.response?.data?.message || error?.message || 'Failed to load landing pages');
+    throw new Error(apiError?.response?.data?.message || apiError?.message || 'Failed to load landing pages');
   }
 };
 
@@ -53,27 +65,28 @@ export const createLandingPage = async (pageData: {
       console.error('Create landing page API response indicates failure:', response.data);
       throw new Error('API response indicates failure');
     }
-  } catch (error: any) {
-    console.error('Create landing page API error:', error);
+  } catch (error) {
+    const apiError = error as ApiError;
+    console.error('Create landing page API error:', apiError);
     
     // Handle specific error cases
-    if (error?.code === 'ECONNREFUSED') {
+    if (apiError?.code === 'ECONNREFUSED') {
       throw new Error('Unable to connect to server. Please check your connection.');
     }
     
-    if (error?.response?.status === 400) {
+    if (apiError?.response?.status === 400) {
       throw new Error('Invalid landing page data provided.');
     }
     
-    if (error?.response?.status === 409) {
+    if (apiError?.response?.status === 409) {
       throw new Error('A landing page with this slug already exists.');
     }
     
-    if (error?.response?.status === 500) {
+    if (apiError?.response?.status === 500) {
       throw new Error('Server error while creating landing page. Please try again later.');
     }
     
-    throw new Error(error?.response?.data?.message || error?.message || 'Failed to create landing page');
+    throw new Error(apiError?.response?.data?.message || apiError?.message || 'Failed to create landing page');
   }
 };
 
@@ -95,27 +108,28 @@ export const updateLandingPage = async (pageId: string, updateData: {
       console.error('Update landing page API response indicates failure:', response.data);
       throw new Error('API response indicates failure');
     }
-  } catch (error: any) {
-    console.error('Update landing page API error:', error);
+  } catch (error) {
+    const apiError = error as ApiError;
+    console.error('Update landing page API error:', apiError);
     
     // Handle specific error cases
-    if (error?.code === 'ECONNREFUSED') {
+    if (apiError?.code === 'ECONNREFUSED') {
       throw new Error('Unable to connect to server. Please check your connection.');
     }
     
-    if (error?.response?.status === 404) {
+    if (apiError?.response?.status === 404) {
       throw new Error('Landing page not found.');
     }
     
-    if (error?.response?.status === 400) {
+    if (apiError?.response?.status === 400) {
       throw new Error('Invalid update data provided.');
     }
     
-    if (error?.response?.status === 500) {
+    if (apiError?.response?.status === 500) {
       throw new Error('Server error while updating landing page. Please try again later.');
     }
     
-    throw new Error(error?.response?.data?.message || error?.message || 'Failed to update landing page');
+    throw new Error(apiError?.response?.data?.message || apiError?.message || 'Failed to update landing page');
   }
 };
 
@@ -133,23 +147,24 @@ export const deleteLandingPage = async (pageId: string) => {
       console.error('Delete landing page API response indicates failure:', response.data);
       throw new Error('API response indicates failure');
     }
-  } catch (error: any) {
-    console.error('Delete landing page API error:', error);
+  } catch (error) {
+    const apiError = error as ApiError;
+    console.error('Delete landing page API error:', apiError);
     
     // Handle specific error cases
-    if (error?.code === 'ECONNREFUSED') {
+    if (apiError?.code === 'ECONNREFUSED') {
       throw new Error('Unable to connect to server. Please check your connection.');
     }
     
-    if (error?.response?.status === 404) {
+    if (apiError?.response?.status === 404) {
       throw new Error('Landing page not found.');
     }
     
-    if (error?.response?.status === 500) {
+    if (apiError?.response?.status === 500) {
       throw new Error('Server error while deleting landing page. Please try again later.');
     }
     
-    throw new Error(error?.response?.data?.message || error?.message || 'Failed to delete landing page');
+    throw new Error(apiError?.response?.data?.message || apiError?.message || 'Failed to delete landing page');
   }
 };
 
@@ -167,8 +182,9 @@ export const getFunnelAnalytics = async () => {
       console.error('Funnel analytics API response indicates failure:', response.data);
       throw new Error('API response indicates failure');
     }
-  } catch (error: any) {
-    console.error('Funnel analytics API error:', error);
+  } catch (error) {
+    const apiError = error as ApiError;
+    console.error('Funnel analytics API error:', apiError);
     
     // Return mock data for now
     return {
