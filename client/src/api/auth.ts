@@ -1,5 +1,14 @@
 import api from './api';
 
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+  message?: string;
+}
+
 // Description: User login
 // Endpoint: POST /api/auth/login
 // Request: { email: string, password: string }
@@ -12,10 +21,11 @@ export const login = async (email: string, password: string) => {
     });
     
     return response.data;
-  } catch (error: any) {
-    console.error('Login API error:', error);
+  } catch (error) {
+    const apiError = error as ApiError;
+    console.error('Login API error:', apiError);
     
-    throw new Error(error?.response?.data?.message || error.message);
+    throw new Error(apiError?.response?.data?.message || apiError?.message || 'Login failed');
   }
 };
 
@@ -35,10 +45,11 @@ export const register = async (userData: {
     const response = await api.post('/api/auth/register', userData);
     
     return response.data;
-  } catch (error: any) {
-    console.error('Register API error:', error);
+  } catch (error) {
+    const apiError = error as ApiError;
+    console.error('Register API error:', apiError);
     
-    throw new Error(error?.response?.data?.message || error.message);
+    throw new Error(apiError?.response?.data?.message || apiError?.message || 'Registration failed');
   }
 };
 
@@ -51,8 +62,9 @@ export const logout = async () => {
     const response = await api.post('/api/auth/logout');
     
     return response.data;
-  } catch (error: any) {
-    console.error('Logout API error:', error);
+  } catch (error) {
+    const apiError = error as ApiError;
+    console.error('Logout API error:', apiError);
     
     // Don't throw error for logout - just log it
   }

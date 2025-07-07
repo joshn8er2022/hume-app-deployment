@@ -13,25 +13,15 @@ import {
   Eye,
   Edit,
   BarChart3,
-  Globe,
   Users,
   TrendingUp,
-  MousePointer,
-  Calendar,
-  ArrowRight
+  MousePointer
 } from "lucide-react"
 import { getLandingPages, createLandingPage, getFunnelAnalytics } from "@/api/funnels"
 import { useToast } from "@/hooks/useToast"
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  BarChart,
-  Bar,
   PieChart,
   Pie,
   Cell
@@ -51,9 +41,28 @@ interface LandingPage {
   updatedAt: string
 }
 
+interface FunnelStage {
+  name: string
+  count: number
+  conversion: number
+}
+
+interface LeadTypeData {
+  conversions: number
+  views: number
+  revenue: number
+}
+
+interface FunnelData {
+  funnelData: {
+    stages: FunnelStage[]
+    byLeadType: Record<string, LeadTypeData>
+  }
+}
+
 export function FunnelBuilder() {
   const [pages, setPages] = useState<LandingPage[]>([])
-  const [funnelData, setFunnelData] = useState<any>(null)
+  const [funnelData, setFunnelData] = useState<FunnelData | null>(null)
   const [loading, setLoading] = useState(true)
   const [newPage, setNewPage] = useState({
     name: '',
@@ -67,7 +76,7 @@ export function FunnelBuilder() {
       try {
         const [pagesData, analyticsData] = await Promise.all([
           getLandingPages(),
-          getFunnelAnalytics('30d')
+          getFunnelAnalytics()
         ])
         setPages(pagesData.pages)
         setFunnelData(analyticsData)
@@ -311,7 +320,7 @@ export function FunnelBuilder() {
                       fill="#8884d8"
                       dataKey="value"
                     >
-                      {Object.entries(funnelData?.funnelData?.byLeadType || {}).map((entry, index) => (
+                      {Object.entries(funnelData?.funnelData?.byLeadType || {}).map((_, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
@@ -330,7 +339,7 @@ export function FunnelBuilder() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {pages.slice(0, 3).map((page, index) => (
+                  {pages.slice(0, 3).map((page) => (
                     <div key={page._id} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
                       <div>
                         <div className="font-medium">{page.name}</div>

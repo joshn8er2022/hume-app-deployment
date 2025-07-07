@@ -70,7 +70,7 @@ export function ApplicationForm() {
     // Component mounted
   }, [applicationType, searchParams])
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: string, value: string | boolean | string[]) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -98,14 +98,20 @@ export function ApplicationForm() {
     }
   }
 
-  const extractErrorMessage = (error: any): string => {
+  const extractErrorMessage = (error: unknown): string => {
     // Axios or fetch with JSON error response
-    if (error?.response?.data?.error) {
-      return error.response.data.error;
+    if (error && typeof error === 'object' && 'response' in error) {
+      const axiosError = error as { response?: { data?: { error?: string } } };
+      if (axiosError.response?.data?.error) {
+        return axiosError.response.data.error;
+      }
     }
     // Fetch API with JSON error
-    if (error?.data?.error) {
-      return error.data.error;
+    if (error && typeof error === 'object' && 'data' in error) {
+      const fetchError = error as { data?: { error?: string } };
+      if (fetchError.data?.error) {
+        return fetchError.data.error;
+      }
     }
     // If error is a string
     if (typeof error === 'string') {
@@ -190,7 +196,7 @@ export function ApplicationForm() {
 
       // Navigate to confirmation page with application ID
       navigate(`/confirmation?type=${applicationType}&id=${response.data._id}`)
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error submitting application:', error)
       const errorMsg = extractErrorMessage(error)
       toast({

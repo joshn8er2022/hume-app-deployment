@@ -58,7 +58,7 @@ export function UserProfile() {
       toast({
         variant: "destructive",
         title: "Error",
-        description: error?.message || "Failed to load profile",
+        description: error instanceof Error ? error.message : "Failed to load profile",
       })
     } finally {
       setProfileLoading(false)
@@ -79,7 +79,7 @@ export function UserProfile() {
       toast({
         variant: "destructive",
         title: "Error",
-        description: error?.message || "Failed to update profile",
+        description: error instanceof Error ? error.message : "Failed to update profile",
       })
     } finally {
       setLoading(false)

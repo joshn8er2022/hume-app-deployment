@@ -40,10 +40,10 @@ interface Lead {
   updatedAt: string
   notes: Array<{
     content: string
-    createdBy: any
+    createdBy: string
     createdAt: string
   }>
-  assignedTo?: any
+  assignedTo?: string
 }
 
 export function LeadManagement() {
@@ -80,7 +80,7 @@ export function LeadManagement() {
         console.error('Error fetching leads:', error)
         toast({
           title: "Error Loading Leads",
-          description: error.message,
+          description: error instanceof Error ? error.message : 'Unknown error',
           variant: "destructive",
         })
       } finally {
@@ -119,7 +119,7 @@ export function LeadManagement() {
       console.error('Error creating lead:', error)
       toast({
         title: "Failed to Create Lead",
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Unknown error',
         variant: "destructive",
       })
     }
@@ -141,7 +141,7 @@ export function LeadManagement() {
       console.error('Error updating lead status:', error)
       toast({
         title: "Update Failed",
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Unknown error',
         variant: "destructive",
       })
     }
@@ -169,7 +169,7 @@ export function LeadManagement() {
       console.error('Error adding note:', error)
       toast({
         title: "Failed to Add Note",
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Unknown error',
         variant: "destructive",
       })
     }

@@ -11,7 +11,6 @@ import {
   DollarSign,
   Target,
   Clock,
-  CheckCircle,
   AlertCircle,
   BarChart3,
   RefreshCw
@@ -39,12 +38,41 @@ interface Activity {
   status: 'success' | 'warning' | 'info'
 }
 
+interface ActiveUsersData {
+  daily?: { count: number }
+  weekly?: { count: number }
+  monthly?: { count: number }
+}
+
+interface FunnelStep {
+  step: string
+  count: number
+  conversion: number
+}
+
+interface FunnelData {
+  steps?: FunnelStep[]
+}
+
+interface PerformanceData {
+  requests?: {
+    total: number
+    errorRate: number
+  }
+  performance?: {
+    avgResponseTime: number
+  }
+  resources?: {
+    cpuUsage: number
+  }
+}
+
 export function Dashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [activities, setActivities] = useState<Activity[]>([])
-  const [activeUsersData, setActiveUsersData] = useState(null)
-  const [funnelData, setFunnelData] = useState(null)
-  const [performanceData, setPerformanceData] = useState(null)
+  const [activeUsersData, setActiveUsersData] = useState<ActiveUsersData | null>(null)
+  const [funnelData, setFunnelData] = useState<FunnelData | null>(null)
+  const [performanceData, setPerformanceData] = useState<PerformanceData | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const { toast } = useToast()
@@ -97,7 +125,7 @@ export function Dashboard() {
       console.error('Error fetching dashboard data:', error)
       toast({
         title: "Error Loading Dashboard",
-        description: `Failed to load dashboard data: ${error.message}`,
+        description: `Failed to load dashboard data: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: "destructive",
       })
     } finally {
@@ -108,7 +136,7 @@ export function Dashboard() {
 
   useEffect(() => {
     fetchDashboardData()
-  }, [])
+  }, [fetchDashboardData])
 
   const handleRefresh = () => {
     fetchDashboardData(true)
@@ -294,13 +322,13 @@ export function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {funnelData.steps?.map((step, index) => (
+              {funnelData.steps?.map((step: { step: string; count: number; conversion: number }) => (
                 <div key={step.step} className="space-y-2">
                   <div className="flex justify-between items-center">
                     <span className="font-medium">{step.step}</span>
-                    <span className="text-sm text-muted-foreground">{step.count} ({step.percentage}%)</span>
+                    <span className="text-sm text-muted-foreground">{step.count} ({step.conversion}%)</span>
                   </div>
-                  <Progress value={parseFloat(step.percentage)} className="h-2" />
+                  <Progress value={step.conversion} className="h-2" />
                 </div>
               ))}
             </div>

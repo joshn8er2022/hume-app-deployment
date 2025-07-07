@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { login as loginApi, register as registerApi, logout as logoutApi } from '@/api/auth'
 
 interface User {
@@ -11,11 +11,20 @@ interface User {
   subscriptionStatus?: string
 }
 
+interface RegisterUserData {
+  firstName: string
+  lastName: string
+  email: string
+  password: string
+  role?: string
+  companyName?: string
+}
+
 interface AuthContextType {
   user: User | null
   isAuthenticated: boolean
   login: (email: string, password: string) => Promise<void>
-  register: (userData: any) => Promise<void>
+  register: (userData: RegisterUserData) => Promise<void>
   logout: () => void
 }
 
@@ -88,13 +97,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (response.user) {
         setUser(response.user)
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Auth context login error:', error)
       throw error
     }
   }
 
-  const register = async (userData: any) => {
+  const register = async (userData: RegisterUserData) => {
     try {
       const response = await registerApi(userData)
 
@@ -118,7 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (response.user) {
         setUser(response.user)
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Auth context register error:', error)
       throw error
     }

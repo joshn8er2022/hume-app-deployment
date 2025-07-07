@@ -1,5 +1,26 @@
 import api from './api';
 
+interface ApiError {
+  response?: {
+    data?: {
+      error?: string;
+      message?: string;
+    };
+  };
+  message?: string;
+}
+
+interface LeadUpdateData {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  companyName?: string;
+  businessType?: string;
+  score?: number;
+  source?: string;
+}
+
 // Description: Get all leads with filtering options
 // Endpoint: GET /api/leads
 // Request: { businessType?: string, status?: string, search?: string, page?: number, limit?: number }
@@ -9,7 +30,8 @@ export const getLeads = async (filters = {}) => {
     const response = await api.get('/api/leads', { params: filters });
     return response.data.leads;
   } catch (error) {
-    throw new Error(error?.response?.data?.error || error.message);
+    const apiError = error as ApiError;
+    throw new Error(apiError?.response?.data?.error || apiError?.message || 'Failed to get leads');
   }
 }
 
@@ -31,7 +53,8 @@ export const createLead = async (leadData: {
     const response = await api.post('/api/leads', leadData);
     return response.data;
   } catch (error) {
-    throw new Error(error?.response?.data?.error || error.message);
+    const apiError = error as ApiError;
+    throw new Error(apiError?.response?.data?.error || apiError?.message || 'Failed to create lead');
   }
 }
 
@@ -44,7 +67,8 @@ export const getLeadById = async (leadId: string) => {
     const response = await api.get(`/api/leads/${leadId}`);
     return response.data.lead;
   } catch (error) {
-    throw new Error(error?.response?.data?.error || error.message);
+    const apiError = error as ApiError;
+    throw new Error(apiError?.response?.data?.error || apiError?.message || 'Failed to get lead');
   }
 }
 
@@ -52,12 +76,13 @@ export const getLeadById = async (leadId: string) => {
 // Endpoint: PUT /api/leads/:id
 // Request: { firstName?: string, lastName?: string, email?: string, phone?: string, companyName?: string, businessType?: string, score?: number, source?: string }
 // Response: { success: boolean, message: string, lead: Lead }
-export const updateLead = async (leadId: string, updateData: any) => {
+export const updateLead = async (leadId: string, updateData: LeadUpdateData) => {
   try {
     const response = await api.put(`/api/leads/${leadId}`, updateData);
     return response.data;
   } catch (error) {
-    throw new Error(error?.response?.data?.error || error.message);
+    const apiError = error as ApiError;
+    throw new Error(apiError?.response?.data?.error || apiError?.message || 'Failed to update lead');
   }
 }
 
@@ -70,7 +95,8 @@ export const updateLeadStatus = async (leadId: string, status: string) => {
     const response = await api.put(`/api/leads/${leadId}/status`, { status });
     return response.data;
   } catch (error) {
-    throw new Error(error?.response?.data?.error || error.message);
+    const apiError = error as ApiError;
+    throw new Error(apiError?.response?.data?.error || apiError?.message || 'Failed to update lead status');
   }
 }
 
@@ -83,7 +109,8 @@ export const addLeadNote = async (leadId: string, note: string) => {
     const response = await api.post(`/api/leads/${leadId}/notes`, { note });
     return response.data;
   } catch (error) {
-    throw new Error(error?.response?.data?.error || error.message);
+    const apiError = error as ApiError;
+    throw new Error(apiError?.response?.data?.error || apiError?.message || 'Failed to add lead note');
   }
 }
 
@@ -96,6 +123,7 @@ export const deleteLead = async (leadId: string) => {
     const response = await api.delete(`/api/leads/${leadId}`);
     return response.data;
   } catch (error) {
-    throw new Error(error?.response?.data?.error || error.message);
+    const apiError = error as ApiError;
+    throw new Error(apiError?.response?.data?.error || apiError?.message || 'Failed to delete lead');
   }
 }

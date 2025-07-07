@@ -7,17 +7,22 @@ import { Loader2, Database, Users, FileText, MessageSquare, CheckCircle, ArrowLe
 import { seedAdminUser, seedTestData, getSeedStatus } from "@/api/seed"
 import { useNavigate } from "react-router-dom"
 
+interface SeedStatus {
+  adminUserExists: boolean;
+  counts: {
+    users: number;
+    leads: number;
+    applications: number;
+    communications: number;
+  };
+}
+
 export function AdminSeeding() {
-  const [loading, setLoading] = useState(false)
   const [seedingAdmin, setSeedingAdmin] = useState(false)
   const [seedingData, setSeedingData] = useState(false)
-  const [status, setStatus] = useState(null)
+  const [status, setStatus] = useState<SeedStatus | null>(null)
   const { toast } = useToast()
   const navigate = useNavigate()
-
-  useEffect(() => {
-    loadStatus()
-  }, [])
 
   const loadStatus = async () => {
     try {
@@ -25,13 +30,18 @@ export function AdminSeeding() {
       setStatus(result.data)
     } catch (error) {
       console.error('Error loading seed status:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load seed status';
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message,
+        description: errorMessage,
       })
     }
   }
+
+  useEffect(() => {
+    loadStatus()
+  }, [loadStatus])
 
   const handleSeedAdmin = async () => {
     try {
@@ -44,10 +54,11 @@ export function AdminSeeding() {
       await loadStatus()
     } catch (error) {
       console.error('Error seeding admin:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to seed admin user';
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message,
+        description: errorMessage,
       })
     } finally {
       setSeedingAdmin(false)
@@ -65,10 +76,11 @@ export function AdminSeeding() {
       await loadStatus()
     } catch (error) {
       console.error('Error seeding test data:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to seed test data';
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message,
+        description: errorMessage,
       })
     } finally {
       setSeedingData(false)
@@ -86,8 +98,8 @@ export function AdminSeeding() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button onClick={loadStatus} variant="outline" disabled={loading}>
-              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Database className="mr-2 h-4 w-4" />}
+            <Button onClick={loadStatus} variant="outline">
+              <Database className="mr-2 h-4 w-4" />
               Refresh Status
             </Button>
             <Button onClick={() => navigate('/login')} variant="outline">

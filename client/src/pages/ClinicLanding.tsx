@@ -2,13 +2,11 @@ import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { 
   Play, 
   Pause, 
   ArrowRight, 
-  CheckCircle, 
   Users, 
   TrendingUp, 
   Clock,
@@ -18,14 +16,12 @@ import {
   Mail
 } from "lucide-react"
 import { recordPageView } from "@/api/analytics"
-import { useToast } from "@/hooks/useToast"
 
 export function ClinicLanding() {
   const [isPlaying, setIsPlaying] = useState(false)
   const [watchProgress, setWatchProgress] = useState(0)
   const [showApplication, setShowApplication] = useState(false)
   const navigate = useNavigate()
-  const { toast } = useToast()
 
   // Track page view on component mount
   useEffect(() => {
