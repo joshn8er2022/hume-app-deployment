@@ -140,7 +140,7 @@ const applicationSchema = new mongoose.Schema({
     }],
     abandonmentPoint: String, // Last field interacted with before abandoning
     deviceInfo: {
-      type: String,
+      userAgent: String,
       browser: String,
       os: String,
       screenResolution: String,
